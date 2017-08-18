@@ -1,18 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from peewee import *
+from app.tools.peeweeUtils import create_peewee_connection
 
-database = MySQLDatabase('devops', **{'host': '192.168.234.132', 'password': 'admin', 'port': 3306, 'user': 'root'})
 
 class UnknownField(object):
     def __init__(self, *_, **__): pass
 
 class BaseModel(Model):
     class Meta:
-        database = database
+        database = create_peewee_connection()
 
 class Workflow(BaseModel):
     comment = CharField(null=True)
+    service = CharField(null=True)
     create_time = DateTimeField()
     deploy_info = CharField(null=True)
     dev_user = CharField()

@@ -9,6 +9,28 @@ class BaseModel(Model):
     class Meta:
         database = database
 
+class Services(BaseModel):
+    s = PrimaryKeyField(db_column='s_id')
+    service_name = CharField()
+    war_url = CharField(null=True)
+
+    class Meta:
+        db_table = 'services'
+
+class Teams(BaseModel):
+    t = PrimaryKeyField(db_column='t_id')
+    team_name = CharField()
+
+    class Meta:
+        db_table = 'teams'
+
+class Users(BaseModel):
+    password = CharField()
+    username = CharField()
+
+    class Meta:
+        db_table = 'users'
+
 class Workflow(BaseModel):
     comment = CharField(null=True)
     create_time = DateTimeField()

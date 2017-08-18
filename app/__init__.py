@@ -10,6 +10,7 @@ from flask_cors import CORS
 blueprints = [
     ('app.views.auth:auth', '/api/v1/auth'),
     ('app.views.workFlow:workflow', '/api/v1/workflow'),
+    ('app.views.openApi:common', '/api/v1/common'),
 ]
 
 def create_app():

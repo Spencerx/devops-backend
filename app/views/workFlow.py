@@ -87,10 +87,7 @@ def workflow_history_search():
 @workflow.route('/create',methods=['POST','OPTION'])
 def create_workflow():
     if request.method == 'POST':
-        form_data = request.form
-        print form_data['service']
-        print form_data
-        #sql_state = form_data['sql_state']
+        form_data = request.get_json()
         service = form_data['service']
         team = form_data['team']
         dev = form_data['dev']
@@ -105,5 +102,10 @@ def create_workflow():
                      deploy_info=desc,dev_user=dev,test_user=test,production_user=product,jenkins_version=version,
                      last_jenkins_version=last_version,sql_info=sql_desc,team_name=team)
 
-        w.save()
-        return '200'
+        try:
+            w.save()
+            return response_json(200,'create successful')
+        except Exception,e:
+            return response_json(500,'create failed')
+    else:
+        return ''

@@ -16,6 +16,20 @@ CREATE DATABASE /*!32312 IF NOT EXISTS*/`devops` /*!40100 DEFAULT CHARACTER SET 
 
 USE `devops`;
 
+/*Table structure for table `roles` */
+
+DROP TABLE IF EXISTS `roles`;
+
+CREATE TABLE `roles` (
+  `r_id` int(11) NOT NULL AUTO_INCREMENT,
+  `role_name` varchar(256) NOT NULL,
+  PRIMARY KEY (`r_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8;
+
+/*Data for the table `roles` */
+
+insert  into `roles`(`r_id`,`role_name`) values (1,'管理员'),(2,'运维'),(3,'开发'),(4,'测试'),(5,'产品'),(6,'待定角色');
+
 /*Table structure for table `services` */
 
 DROP TABLE IF EXISTS `services`;
@@ -53,12 +67,14 @@ CREATE TABLE `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(128) NOT NULL,
   `password` varchar(256) NOT NULL,
+  `role` int(11) NOT NULL DEFAULT '6',
+  `is_active` varchar(2) NOT NULL DEFAULT '0' COMMENT '0:未激活 1:激活',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8;
 
 /*Data for the table `users` */
 
-insert  into `users`(`id`,`username`,`password`) values (34,'1','pbkdf2:sha256:50000$FKKh6ikJ$25b7da3474a7fb8ce6511121551dc3f3c224ee2b5c8edc51d11fa9b448802be1'),(35,'admin','pbkdf2:sha256:50000$XnkbawBJ$886831653e67c9987fb8ae357b00474f14df3ed94ff3af3b25b8c85abebda3ff');
+insert  into `users`(`id`,`username`,`password`,`role`,`is_active`) values (39,'test','pbkdf2:sha256:50000$frZNuWbs$cf7422ced19fd798b436d9c334737e2e7035a504e74b0ef88184449f338f9524',4,'0'),(40,'dev','pbkdf2:sha256:50000$TyNNjY8e$d9ce878c1bbc7e7691117b7c78fb21f8e3b567fbcbce5a339a11ad06450a2653',3,'1'),(41,'admin','pbkdf2:sha256:50000$ZtyVjLke$453289ebee6585d60428e144b84bd8511e280c2d758ea73b8d138a0a21887b81',1,'1');
 
 /*Table structure for table `workflow` */
 

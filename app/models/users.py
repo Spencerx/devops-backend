@@ -15,6 +15,8 @@ class BaseModel(Model):
 class Users(BaseModel):
     password = CharField()
     username = CharField()
+    role = CharField()
+    is_active = CharField()
 
     class Meta:
         db_table = 'users'

@@ -13,52 +13,65 @@ from app.models.users import Users
 
 auth = Blueprint('auth',__name__)
 
+
 @auth.route('/login',methods=['POST'])
 def login():
-    username = request.form['username']
-    password = request.form['password']
-    try:
-        u = Users.select().where(Users.username==username).get()
-    except Exception,e:
-        current_app.logger.warn(e)
-        return response_json(500,'user is not exist')
-    if u:
-        password_hash = u.password
-        if check_password_hash(password_hash,password):
-            r = create_redis_connection()
-            token = generate_token(username)
-            r.setex(username,token,24*60*60*30)
-            current_app.logger.info('user:{0} get token {1} success'.format(username,token))
-            return response_json(200,token)
-        else:
-            return response_json(500, 'password is not correct')
+    if request.method == 'POST':
+        form_data = request.get_json()
+        username = form_data['username']
+        password = form_data['password']
+        try:
+            u = Users.select().where(Users.username==username).get()
+        except Exception,e:
+            current_app.logger.warn(e)
+            return response_json(500,u'用户不存在',data='')
+        if u:
+            password_hash = u.password
+            if check_password_hash(password_hash,password):
+                r = create_redis_connection()
+                token = generate_token(username)
+                r.setex(username,token,24*60*60*30)
+                current_app.logger.info('user:{0} get token {1} success'.format(username,token))
+                return response_json(200,'',token)
+            else:
+                return response_json(500, u'密码不正确','')
+    else:
+        return ''
 
 
 @auth.route('/logout',methods=['POST'])
 def logout():
-    r = create_redis_connection()
-    username = request.form['username']
-    r.delete(username)
-    current_app.logger.info('user:{0} has safely logout'.format(username))
-    return username
+    if request.method=="POST":
+        r = create_redis_connection()
+        username = request.get_json()['username']
+        try:
+            r.delete(username)
+            current_app.logger.info('user:{0} has safely logout'.format(username))
+            return response_json(200,'','')
+        except Exception,e:
+            return response_json(500, e, '')
+    else:
+        return ''
 
 @auth.route('/register',methods=['POST'])
 def register():
     username = request.form['username']
     password = request.form['password']
+    role = request.form['role']
+    is_active = request.form['is_active']
     is_exist = Users.select().where(Users.username==username).count()
     if is_exist>0:
-        return response_json(500,'this account has been registed')
+        return response_json(500,'this account has been registed','')
     else:
         passwd_hash = generate_password_hash(password,salt_length=8)
-        u = Users(username=username,password=passwd_hash)
+        u = Users(username=username,password=passwd_hash,role=role,is_active=is_active)
         try:
             u.save()
             current_app.logger.info('user:{0} register success'.format(username))
-            return response_json(200,passwd_hash)
+            return response_json(200,'',passwd_hash)
         except Exception,e:
             current_app.logger.info('user:{0} register faild,exception:{1}'.format(username,1))
-            return response_json(500,e)
+            return response_json(500,e,'')
 
 
 @auth.route('/salt_token')
@@ -68,6 +81,7 @@ def token():
         print token
         res = exec_commands(token,'w')
         return str(res['return'])
+
 
 @auth.route('/userinfo',methods=['POST'])
 def userinfo():

@@ -6,8 +6,10 @@ from flask  import request
 from app.tools.tokenUtils import check_token_status
 import logging
 from config import Config
-
 app = create_app()
+
+
+
 
 #全局访问日志
 # logging.basicConfig(level=logging.DEBUG,
@@ -39,6 +41,6 @@ app = create_app()
 #     return response
 
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     app.run(debug=True,host='0.0.0.0',port=80)

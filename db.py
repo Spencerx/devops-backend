@@ -9,6 +9,13 @@ class BaseModel(Model):
     class Meta:
         database = database
 
+class Roles(BaseModel):
+    r = PrimaryKeyField(db_column='r_id')
+    role_name = CharField()
+
+    class Meta:
+        db_table = 'roles'
+
 class Services(BaseModel):
     s = PrimaryKeyField(db_column='s_id')
     service_name = CharField()
@@ -25,25 +32,15 @@ class Teams(BaseModel):
         db_table = 'teams'
 
 class Users(BaseModel):
+    is_active = CharField()
     password = CharField()
+    role = IntegerField()
     username = CharField()
 
     class Meta:
         db_table = 'users'
 
-class Workflow(BaseModel):
-    comment = CharField(null=True)
-    create_time = DateTimeField()
-    deploy_info = CharField(null=True)
-    dev_user = CharField()
-    jenkins_version = CharField(null=True)
-    last_jenkins_version = CharField(null=True)
-    production_user = CharField()
-    sql_info = CharField(null=True)
-    team_name = CharField()
-    test_user = CharField()
-    v_version = CharField(null=True)
-    w = PrimaryKeyField(db_column='w_id')
+
 
     class Meta:
         db_table = 'workflow'

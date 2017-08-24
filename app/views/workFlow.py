@@ -27,17 +27,20 @@ def history():
         for workflow in all_workflow:
             per_flow = {
                     'ID':workflow.w,
-                    'date':workflow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
+                    'create_time':workflow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
+                    'close_time':workflow.close_time.strftime('%Y-%m-%d %H:%M:%M') if workflow.close_time else '',
                     'team_name':workflow.team_name,
-                    'dev_name':workflow.dev_user,
-                    'test_name':workflow.test_user,
+                    'dev_user':workflow.dev_user,
+                    'test_user':workflow.test_user,
                     'sql_info':workflow.sql_info,
-                    'product_name':workflow.production_user,
-                    'jenkins_version':workflow.jenkins_version,
-                    'v_version':workflow.v_version,
-                    'last_jenkins_version':workflow.last_jenkins_version,
+                    'production_user':workflow.production_user,
+                    'current_version':workflow.current_version,
+                    'last_version':workflow.last_version,
                     'comment':workflow.comment,
-                    'status':workflow.comment
+                    'deploy_info':workflow.deploy_info,
+                    'status':workflow.status,
+                    'service':workflow.service,
+                    'approved_user':workflow.approved_user,
                  }
             r.rpush('workflow_history_tabledata',per_flow)
             data.append(per_flow)
@@ -50,7 +53,7 @@ def workflow_history_search():
         form_data = request.get_json()
         id = form_data['id']
         team = form_data['team']
-        create_date = form_data['create_date']
+        create_date = form_data['create_time']
         is_deploy = form_data['is_deploy']
         print team,create_date
         if id:
@@ -58,16 +61,15 @@ def workflow_history_search():
                 workflow = Workflow.select().where(Workflow.w==id).get()
             except Exception,e:
                 return ''
-            print workflow
             data = []
             per_flow = {
                 'ID': workflow.w,
                 'date': workflow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
                 'team_name': workflow.team_name,
-                'dev_name': workflow.dev_user,
-                'test_name': workflow.test_user,
+                'dev_user': workflow.dev_user,
+                'test_user': workflow.test_user,
                 'sql_info': workflow.sql_info,
-                'product_name': workflow.production_user,
+                'production_user': workflow.production_user,
                 'jenkins_version': workflow.jenkins_version,
                 'v_version': workflow.v_version,
                 'last_jenkins_version': workflow.last_jenkins_version,
@@ -89,18 +91,19 @@ def create_workflow():
     if request.method == 'POST':
         form_data = request.get_json()
         service = form_data['service']
-        team = form_data['team']
-        dev = form_data['dev']
-        test = form_data['test']
-        product = form_data['product']
-        version = form_data['version']
+        team_name = form_data['team_name']
+        dev_user = form_data['dev_user']
+        test_user = form_data['test_user']
+        production_user = form_data['production_user']
+        current_version = form_data['current_version']
         last_version = form_data['last_version']
-        sql_desc = form_data['sql_desc']
-        desc = form_data['desc']
+        sql_info = form_data['sql_info']
+        comment = form_data['comment']
+        deploy_info = form_data['deploy_info']
 
-        w = Workflow(service=service,comment=desc,create_time=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                     deploy_info=desc,dev_user=dev,test_user=test,production_user=product,jenkins_version=version,
-                     last_jenkins_version=last_version,sql_info=sql_desc,team_name=team)
+        w = Workflow(service=service,create_time=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                     dev_user=dev_user,test_user=test_user,production_user=production_user,current_version=current_version,last_version=last_version,
+                     sql_info=sql_info,team_name=team_name,comment=comment,deploy_info=deploy_info)
 
         try:
             w.save()

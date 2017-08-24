@@ -3,12 +3,13 @@
 
 from flask import Blueprint, request, current_app
 from app.tools.saltUtils import generate_salt_token,exec_commands
-from app.tools.tokenUtils import generate_token, decrypt_token
+from app.tools.tokenUtils import generate_token, check_token_status
 from app.tools.redisUtils import create_redis_connection
 from app.tools.jsonUtils import response_json
+from app.models.users import Users
 from werkzeug.security import generate_password_hash
 from werkzeug.security import check_password_hash
-from app.models.users import Users
+
 
 
 auth = Blueprint('auth',__name__)
@@ -28,11 +29,22 @@ def login():
         if u:
             password_hash = u.password
             if check_password_hash(password_hash,password):
-                r = create_redis_connection()
-                token = generate_token(username)
-                r.setex(username,token,24*60*60*30)
-                current_app.logger.info('user:{0} get token {1} success'.format(username,token))
-                return response_json(200,'',token)
+                if u.is_active == '1':
+                    r = create_redis_connection()
+                    token = generate_token(username)
+                    r.setex(username,token,24*60*60*30)
+                    data = {
+                        'username': username,
+                        'password': u.password,
+                        'role': u.role,
+                        'is_active': u.is_active,
+                        'token':token
+                    }
+                    current_app.logger.info('user:{0} get token {1} success'.format(username,token))
+                    return response_json(200,'',data=data)
+                else:
+                    return response_json(500, u'账号未激活', '')
+
             else:
                 return response_json(500, u'密码不正确','')
     else:
@@ -73,6 +85,20 @@ def register():
             current_app.logger.info('user:{0} register faild,exception:{1}'.format(username,1))
             return response_json(500,e,'')
 
+@auth.route('/token_status',methods=['POST'])
+def check_status():
+    if request.method=="POST":
+        token = request.get_json()['token']
+        username = request.get_json()['username']
+        t = check_token_status(username,token)
+        if t:
+            return response_json(200,'','')
+        else:
+            return response_json(500, '','')
+    else:
+        return ''
+
+
 
 @auth.route('/salt_token')
 def token():
@@ -82,10 +108,4 @@ def token():
         res = exec_commands(token,'w')
         return str(res['return'])
 
-
-@auth.route('/userinfo',methods=['POST'])
-def userinfo():
-    token = request.form['token']
-    username = decrypt_token(token)
-    return username
 

@@ -1,51 +1,96 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import simplejson as simplejson
 
 from app.models.workflows import Workflow
 from flask import Blueprint, jsonify, request
 from app.tools.redisUtils import create_redis_connection
 from app.tools.jsonUtils import response_json
+from app.tools.ormUtils import id_to_user
+from app.tools.ormUtils import id_to_service
+from app.tools.ormUtils import id_to_team
+from app.tools.ormUtils import id_to_status
 import datetime
 
 workflow = Blueprint('workflow',__name__)
 
-@workflow.route('/history')
+@workflow.route('/history',methods=["GET","POST"])
 def history():
-    r = create_redis_connection()
-    table_data = r.lrange('workflow_history_tabledata',0,-1)
-    if table_data:
-        print 'come from redis'
-        json_table_data = []
-        for table in table_data:
-            json_table_data.append(eval(table))
-        return jsonify(json_table_data)
-    else:
-        print 'come from mysql'
-        all_workflow = Workflow.select()
+    if request.method=='POST':
+        form_data = request.get_json()
+        per_size = form_data['size']
+        page_count = form_data['page']
+        if page_count==0:
+            ws = Workflow.select().limit(10)
+        else:
+            ws = Workflow.select().limit(int(per_size)).offset((int(page_count)-1)*int(per_size))
         data = []
-        for workflow in all_workflow:
+        for workflow in ws:
             per_flow = {
-                    'ID':workflow.w,
-                    'create_time':workflow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
-                    'close_time':workflow.close_time.strftime('%Y-%m-%d %H:%M:%M') if workflow.close_time else '',
-                    'team_name':workflow.team_name,
-                    'dev_user':workflow.dev_user,
-                    'test_user':workflow.test_user,
-                    'sql_info':workflow.sql_info,
-                    'production_user':workflow.production_user,
-                    'current_version':workflow.current_version,
-                    'last_version':workflow.last_version,
-                    'comment':workflow.comment,
-                    'deploy_info':workflow.deploy_info,
-                    'status':workflow.status,
-                    'service':workflow.service,
-                    'approved_user':workflow.approved_user,
-                 }
-            r.rpush('workflow_history_tabledata',per_flow)
+                'ID': workflow.w,
+                'create_time': workflow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
+                'close_time': workflow.close_time.strftime('%Y-%m-%d %H:%M:%M') if workflow.close_time else '',
+                'team_name': id_to_team(workflow.team_name),
+                'dev_user': id_to_user(workflow.dev_user),
+                'test_user': id_to_user(workflow.test_user),
+                'sql_info': workflow.sql_info,
+                'production_user': id_to_user(workflow.production_user),
+                'current_version': workflow.current_version,
+                'last_version': workflow.last_version,
+                'comment': workflow.comment,
+                'deploy_info': workflow.deploy_info,
+                'status': workflow.status,
+                'status_info': id_to_status(workflow.status),
+                'service': id_to_service(workflow.service),
+                'approved_user': id_to_user(workflow.approved_user),
+                'ops_user': id_to_user(workflow.ops_user),
+            }
             data.append(per_flow)
-        r.expire('workflow_history_tabledata',60)
-        return jsonify(data)
+        workflow_count = Workflow.select().count()
+        return response_json(200, '', {"count": workflow_count, "data": data})
+
+
+    if request.method=="GET":
+        r = create_redis_connection()
+        table_data = r.lrange('workflow_history_tabledata',0,-1)
+        if table_data:
+            print 'come from redis'
+            json_table_data = []
+            for table in table_data:
+                json_table_data.append(eval(table))
+
+            return response_json(200, '', {"count": len(json_table_data), "data": json_table_data})
+
+        else:
+            print 'come from mysql'
+            all_workflow = Workflow.select().limit(10)
+            data = []
+            for workflow in all_workflow:
+                per_flow = {
+                        'ID':workflow.w,
+                        'create_time':workflow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
+                        'close_time':workflow.close_time.strftime('%Y-%m-%d %H:%M:%M') if workflow.close_time else '',
+                        'team_name':id_to_team(workflow.team_name),
+                        'dev_user':id_to_user(workflow.dev_user),
+                        'test_user':id_to_user(workflow.test_user),
+                        'sql_info':workflow.sql_info,
+                        'production_user':id_to_user(workflow.production_user),
+                        'current_version':workflow.current_version,
+                        'last_version':workflow.last_version,
+                        'comment':workflow.comment,
+                        'deploy_info':workflow.deploy_info,
+                        'status':workflow.status,
+                        'status_info':id_to_status(workflow.status),
+                        'service':id_to_service(workflow.service),
+                        'approved_user':id_to_user(workflow.approved_user),
+                        'ops_user':id_to_user(workflow.ops_user),
+                     }
+                r.rpush('workflow_history_tabledata',per_flow)
+                data.append(per_flow)
+            r.expire('workflow_history_tabledata',20)
+            workflow_count = Workflow.select().count()
+            return response_json(200,'',{"count":workflow_count,"data":data})
+    else:
+        return ''
 
 @workflow.route('/history/search',methods=['POST','OPTION'])
 def workflow_history_search():
@@ -53,14 +98,13 @@ def workflow_history_search():
         form_data = request.get_json()
         id = form_data['id']
         team = form_data['team']
-        create_date = form_data['create_time']
+        create_time = form_data['create_time']
         is_deploy = form_data['is_deploy']
-        print team,create_date
         if id:
             try:
                 workflow = Workflow.select().where(Workflow.w==id).get()
             except Exception,e:
-                return ''
+                return response_json(200,'','')
             data = []
             per_flow = {
                 'ID': workflow.w,
@@ -70,11 +114,13 @@ def workflow_history_search():
                 'test_user': workflow.test_user,
                 'sql_info': workflow.sql_info,
                 'production_user': workflow.production_user,
-                'jenkins_version': workflow.jenkins_version,
-                'v_version': workflow.v_version,
-                'last_jenkins_version': workflow.last_jenkins_version,
+                'current_version': workflow.jenkins_version,
+                'last_version': workflow.last_version,
                 'comment': workflow.comment,
-                'status': workflow.comment
+                'deploy_info': workflow.deploy_info,
+                'service': workflow.service,
+                'status': workflow.status,
+                'approved_user':workflow.approved_user
             }
             data.append(per_flow)
             if data:

@@ -6,7 +6,6 @@ from config import Config
 from jinja2.utils import import_string
 import os, logging
 from flask_cors import CORS
-from flask_socketio import SocketIO, emit
 
 blueprints = [
     ('app.views.auth:auth', '/api/v1/auth'),

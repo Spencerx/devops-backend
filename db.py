@@ -24,6 +24,13 @@ class Services(BaseModel):
     class Meta:
         db_table = 'services'
 
+class Status(BaseModel):
+    s = PrimaryKeyField(db_column='s_id')
+    status_info = CharField()
+
+    class Meta:
+        db_table = 'status'
+
 class Teams(BaseModel):
     t = PrimaryKeyField(db_column='t_id')
     team_name = CharField()
@@ -40,7 +47,23 @@ class Users(BaseModel):
     class Meta:
         db_table = 'users'
 
-
+class Workflow(BaseModel):
+    approved_user = IntegerField(null=True)
+    close_time = DateTimeField(null=True)
+    comment = CharField(null=True)
+    create_time = DateTimeField()
+    current_version = CharField()
+    deploy_info = CharField(null=True)
+    dev_user = IntegerField()
+    last_version = CharField(null=True)
+    ops_user = IntegerField()
+    production_user = IntegerField()
+    service = CharField()
+    sql_info = CharField(null=True)
+    status = IntegerField()
+    team_name = IntegerField()
+    test_user = IntegerField()
+    w = PrimaryKeyField(db_column='w_id')
 
     class Meta:
         db_table = 'workflow'

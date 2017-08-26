@@ -13,6 +13,7 @@ class BaseModel(Model):
         database = create_peewee_connection()
 
 class Users(BaseModel):
+    id = CharField()
     password = CharField()
     username = CharField()
     role = CharField()

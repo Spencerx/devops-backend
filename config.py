@@ -4,6 +4,7 @@
 import os
 from datetime import timedelta
 
+
 class Config():
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     FILES_DIR = os.path.join(BASE_DIR, 'files')
@@ -36,9 +37,8 @@ class Dev(Config):
     SALT_EAUTH='pam'
 
     #redis
-    REDIS_URL='192.168.234.132'
-    REDIS_PORT=6379
-
+    REDIS_URL = '127.0.0.1'
+    REDIS_PORT = 6379
 
 
 class Prod(Config):

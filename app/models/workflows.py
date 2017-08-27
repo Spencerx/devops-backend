@@ -7,9 +7,11 @@ from app.tools.peeweeUtils import create_peewee_connection
 class UnknownField(object):
     def __init__(self, *_, **__): pass
 
+
 class BaseModel(Model):
     class Meta:
         database = create_peewee_connection()
+
 
 class Workflow(BaseModel):
     comment = CharField(null=True)
@@ -28,5 +30,6 @@ class Workflow(BaseModel):
     test_user = CharField()
     w = PrimaryKeyField(db_column='w_id')
     approved_user = CharField()
+
     class Meta:
         db_table = 'workflow'

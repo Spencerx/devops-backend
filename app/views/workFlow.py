@@ -13,13 +13,14 @@ import datetime
 
 workflow = Blueprint('workflow',__name__)
 
-@workflow.route('/history',methods=["GET","POST"])
+
+@workflow.route('/history', methods=["GET", "POST"])
 def history():
-    if request.method=='POST':
+    if request.method == 'POST':
         form_data = request.get_json()
         per_size = form_data['size']
         page_count = form_data['page']
-        if page_count==0:
+        if page_count == 0:
             ws = Workflow.select().limit(10)
         else:
             ws = Workflow.select().limit(int(per_size)).offset((int(page_count)-1)*int(per_size))
@@ -48,50 +49,6 @@ def history():
         workflow_count = Workflow.select().count()
         return response_json(200, '', {"count": workflow_count, "data": data})
 
-
-    if request.method=="GET":
-        r = create_redis_connection()
-        table_data = r.lrange('workflow_history_tabledata',0,-1)
-        if table_data:
-            print 'come from redis'
-            json_table_data = []
-            for table in table_data:
-                json_table_data.append(eval(table))
-
-            return response_json(200, '', {"count": len(json_table_data), "data": json_table_data})
-
-        else:
-            print 'come from mysql'
-            all_workflow = Workflow.select().limit(10)
-            data = []
-            for workflow in all_workflow:
-                per_flow = {
-                        'ID':workflow.w,
-                        'create_time':workflow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
-                        'close_time':workflow.close_time.strftime('%Y-%m-%d %H:%M:%M') if workflow.close_time else '',
-                        'team_name':id_to_team(workflow.team_name),
-                        'dev_user':id_to_user(workflow.dev_user),
-                        'test_user':id_to_user(workflow.test_user),
-                        'sql_info':workflow.sql_info,
-                        'production_user':id_to_user(workflow.production_user),
-                        'current_version':workflow.current_version,
-                        'last_version':workflow.last_version,
-                        'comment':workflow.comment,
-                        'deploy_info':workflow.deploy_info,
-                        'status':workflow.status,
-                        'status_info':id_to_status(workflow.status),
-                        'service':id_to_service(workflow.service),
-                        'approved_user':id_to_user(workflow.approved_user),
-                        'ops_user':id_to_user(workflow.ops_user),
-                     }
-                r.rpush('workflow_history_tabledata',per_flow)
-                data.append(per_flow)
-            r.expire('workflow_history_tabledata',20)
-            workflow_count = Workflow.select().count()
-            return response_json(200,'',{"count":workflow_count,"data":data})
-    else:
-        return ''
-
 @workflow.route('/history/search',methods=['POST','OPTION'])
 def workflow_history_search():
     if request.method == 'POST':
@@ -114,7 +71,7 @@ def workflow_history_search():
                 'test_user': workflow.test_user,
                 'sql_info': workflow.sql_info,
                 'production_user': workflow.production_user,
-                'current_version': workflow.jenkins_version,
+                'current_version': workflow.current_version,
                 'last_version': workflow.last_version,
                 'comment': workflow.comment,
                 'deploy_info': workflow.deploy_info,
@@ -153,8 +110,8 @@ def create_workflow():
 
         try:
             w.save()
-            return response_json(200,'create successful')
+            return response_json(200,'','ceate successful')
         except Exception,e:
-            return response_json(500,'create failed')
+            return response_json(500,'create failed','')
     else:
         return ''

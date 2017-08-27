@@ -3,5 +3,5 @@
 from peewee import *
 
 def create_peewee_connection():
-    database = MySQLDatabase('devops', **{'host': '192.168.234.132', 'password': 'admin', 'port': 3306, 'user': 'root'})
+    database = MySQLDatabase('devops', **{'host': '127.0.0.1', 'password': 'admin', 'port': 3306, 'user': 'root'})
     return database

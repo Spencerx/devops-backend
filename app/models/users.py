@@ -21,6 +21,7 @@ class Users(BaseModel):
     username = CharField()
     role = CharField()
     is_active = CharField()
+    name_pinyin = CharField()
 
     class Meta:
         db_table = 'users'

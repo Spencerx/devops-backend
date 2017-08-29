@@ -21,7 +21,6 @@ class Workflow(BaseModel):
     deploy_info = CharField(null=True)
     dev_user = CharField()
     last_version = CharField(null=True)
-    ops_user = IntegerField()
     production_user = CharField()
     service = CharField()
     sql_info = CharField(null=True)
@@ -30,6 +29,7 @@ class Workflow(BaseModel):
     test_user = CharField()
     w = PrimaryKeyField(db_column='w_id')
     approved_user = CharField()
+    ops_user = CharField()
 
     class Meta:
         db_table = 'workflow'

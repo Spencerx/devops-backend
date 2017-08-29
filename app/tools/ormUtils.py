@@ -15,9 +15,11 @@ def id_to_user(id):
     u = Users.select().where(Users.id==id).get()
     return u.username
 
+
 def id_to_service(id):
     s = Services.select().where(Services.s == id).get()
     return s.service_name
+
 
 def id_to_status(id):
     s = Status.select().where(Status.s == id).get()

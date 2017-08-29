@@ -12,3 +12,11 @@ from xpinyin import Pinyin
 p = Pinyin()
 
 print p.get_pinyin(u'孙麒麟','')
+
+from app.models.users import Users
+
+u = Users.select()
+for i in u:
+    if i.can_approved:
+     print i.can_approved
+

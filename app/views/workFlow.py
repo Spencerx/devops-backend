@@ -9,6 +9,7 @@ from app.tools.ormUtils import id_to_user
 from app.tools.ormUtils import id_to_service
 from app.tools.ormUtils import id_to_team
 from app.tools.ormUtils import id_to_status
+from app.models.users import Users
 import datetime
 
 workflow = Blueprint('workflow',__name__)
@@ -41,13 +42,14 @@ def history():
                 'deploy_info': workflow.deploy_info,
                 'status': workflow.status,
                 'status_info': id_to_status(workflow.status),
-                'service': id_to_service(workflow.service),
-                'approved_user': id_to_user(workflow.approved_user),
-                'ops_user': id_to_user(workflow.ops_user),
+                'service': id_to_service(workflow.service) if workflow.service else '',
+                'approved_user': id_to_user(workflow.approved_user) if workflow.approved_user else '',
+                'ops_user': id_to_user(workflow.ops_user) if workflow.ops_user else '',
             }
             data.append(per_flow)
         workflow_count = Workflow.select().count()
         return response_json(200, '', {"count": workflow_count, "data": data})
+
 
 @workflow.route('/history/search',methods=['POST','OPTION'])
 def workflow_history_search():
@@ -89,7 +91,8 @@ def workflow_history_search():
     else:
         return ''
 
-@workflow.route('/create',methods=['POST','OPTION'])
+
+@workflow.route('/create',methods=['POST', 'OPTION'])
 def create_workflow():
     if request.method == 'POST':
         form_data = request.get_json()
@@ -104,14 +107,67 @@ def create_workflow():
         comment = form_data['comment']
         deploy_info = form_data['deploy_info']
 
-        w = Workflow(service=service,create_time=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                     dev_user=dev_user,test_user=test_user,production_user=production_user,current_version=current_version,last_version=last_version,
-                     sql_info=sql_info,team_name=team_name,comment=comment,deploy_info=deploy_info)
+        w = Workflow(service=service, create_time=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                     dev_user=dev_user, test_user=test_user, production_user=production_user,
+                     current_version=current_version, last_version=last_version, sql_info=sql_info,
+                     team_name=team_name, comment=comment, deploy_info=deploy_info, ops_user='')
 
         try:
             w.save()
-            return response_json(200,'','ceate successful')
-        except Exception,e:
-            return response_json(500,'create failed','')
+            return response_json(200, '', 'ceate successful')
+        except Exception, e:
+            return response_json(500, 'create failed', '')
+    else:
+        return ''
+
+
+@workflow.route('/myflow', methods=['POST', 'OPTION'])
+def my_flow():
+    if request.method == "POST":
+        req_data = request.get_json()
+        uid = req_data['uid']
+        u = Users.select().where(Users.id == uid).get()
+        user_role = u.role
+        can_approved = u.can_approved
+        workflow_list = []
+        if int(user_role) == 2:
+            flows = Workflow.select().where(Workflow.status == 2)
+            for flow in flows:
+                workflow_list.append(flow.w)
+
+        if int(user_role) == 4:
+            flows = Workflow.select().where((Workflow.status == 3) & (Workflow.test_user == uid))
+            for flow in flows:
+                workflow_list.append(flow.w)
+
+        if can_approved:
+            flows = Workflow.select().where(Workflow.status == 1)
+            for flow in flows:
+                workflow_list.append(flow.w)
+
+        if not workflow_list:
+            return response_json(200, "", [])
+        else:
+            flow_data = []
+            for flow_id in workflow_list:
+                flows = Workflow.select().where(Workflow.w == flow_id)
+                for per_flow in flows:
+                    per_flow_data = {
+                        'ID': per_flow.w,
+                        'create_time': per_flow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
+                        'team_name': per_flow.team_name,
+                        'sql_info': per_flow.sql_info if per_flow.sql_info else '',
+                        'test_user': id_to_user(per_flow.test_user) if per_flow.test_user else '',
+                        'dev_user': id_to_user(per_flow.dev_user) if per_flow.dev_user else '',
+                        'current_version': per_flow.current_version,
+                        'comment': per_flow.comment if per_flow.comment else '',
+                        'deploy_info': per_flow.deploy_info,
+                        'service': per_flow.service,
+                        'status': id_to_status(per_flow.status),
+                    }
+                    flow_data.append(per_flow_data)
+            flow_count = len(flow_data)
+            return response_json(200, "", {'data': flow_data, 'count': flow_count})
+
     else:
         return ''

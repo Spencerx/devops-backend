@@ -36,12 +36,12 @@ def login():
                     token = generate_token(username)
                     r.setex(username,token,24*60*60*30)
                     data = {
-                        #'username': username,
-                        #'password': u.password,
-                        #'role': u.role,
-                        #'is_active': u.is_active,
+                        'username': username,
+                        'password': u.password,
+                        'role': u.role,
+                        'is_active': u.is_active,
                         'token': token,
-                        #'user_id': u.id
+                        'uid': u.id
                     }
                     current_app.logger.info('user:{0} get token {1} success'.format(username,token))
                     return response_json(200,'',data=data)

@@ -14,6 +14,7 @@ blueprints = [
     ('app.views.user:user', '/api/v1/user'),
 ]
 
+
 def create_app():
     app = Flask(__name__)
     load_config(app)
@@ -46,6 +47,7 @@ def load_ext(app):
     # login_manager.login_view='auth.login'
     # login_manager.init_app(app)
     pass
+
 
 def register_blueprints(app):
     for bp_info in blueprints:

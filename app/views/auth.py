@@ -96,9 +96,9 @@ def register():
 @auth.route('/token_status', methods=['POST'])
 def check_status():
     if request.method == "POST":
-        token = request.get_json()['token']
+        token = request.headers.get('Authorization', None)
         username = request.get_json()['username']
-        t = check_token_status(username,token)
+        t = check_token_status(username, token)
         if t:
             return response_json(200, '', '')
         else:

@@ -13,7 +13,7 @@ user = Blueprint('user', __name__)
 @user.route('/userinfo', methods=['POST'])
 def userinfo():
     if request.method == 'POST':
-        token = request.get_json()['token']
+        token = request.headers.get('Authorization', None)
         if token:
             username = decrypt_token(token)
             if not check_token_status(username=username, token=token):

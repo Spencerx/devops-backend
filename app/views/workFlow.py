@@ -5,10 +5,11 @@ from app.models.workflows import Workflow
 from flask import Blueprint, jsonify, request
 from app.tools.redisUtils import create_redis_connection
 from app.tools.jsonUtils import response_json
-from app.tools.ormUtils import id_to_user
+from app.tools.ormUtils import id_to_user, user_to_id, service_to_id, status_to_id, team_to_id
 from app.tools.ormUtils import id_to_service
 from app.tools.ormUtils import id_to_team
 from app.tools.ormUtils import id_to_status
+from app.tools.commonUtils import async_send_email
 from app.models.users import Users
 import datetime
 
@@ -67,7 +68,7 @@ def workflow_history_search():
             data = []
             per_flow = {
                 'ID': workflow.w,
-                'date': workflow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
+                'create_time': workflow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
                 'team_name': workflow.team_name,
                 'dev_user': workflow.dev_user,
                 'test_user': workflow.test_user,
@@ -79,6 +80,7 @@ def workflow_history_search():
                 'deploy_info': workflow.deploy_info,
                 'service': workflow.service,
                 'status': workflow.status,
+                'status_info': id_to_status(workflow.status),
                 'approved_user':workflow.approved_user
             }
             data.append(per_flow)
@@ -87,35 +89,57 @@ def workflow_history_search():
             else:
                 return jsonify('')
         else:
-            return ''
+            pass
+            # workflow = Workflow.select().where(Workflow.team_name).get()
+
     else:
         return ''
 
 
-@workflow.route('/create',methods=['POST', 'OPTION'])
+@workflow.route('/create', methods=['POST', 'OPTION'])
 def create_workflow():
     if request.method == 'POST':
         form_data = request.get_json()
         service = form_data['service']
         team_name = form_data['team_name']
-        dev_user = form_data['dev_user']
-        test_user = form_data['test_user']
-        production_user = form_data['production_user']
+        dev_user = user_to_id(form_data['dev_user'])
+        test_user = user_to_id(form_data['test_user'])
+        production_user = user_to_id(form_data['production_user'])
         current_version = form_data['current_version']
         last_version = form_data['last_version']
         sql_info = form_data['sql_info']
         comment = form_data['comment']
         deploy_info = form_data['deploy_info']
-
-        w = Workflow(service=service, create_time=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        w = Workflow(service=service, create_time=create_time,
                      dev_user=dev_user, test_user=test_user, production_user=production_user,
                      current_version=current_version, last_version=last_version, sql_info=sql_info,
-                     team_name=team_name, comment=comment, deploy_info=deploy_info, ops_user='')
+                     team_name=team_name, comment=comment, deploy_info=deploy_info)
 
         try:
             w.save()
+            w_id = w.w
+            email_data = {
+                "service": id_to_service(service),
+                "team_name": id_to_team(service),
+                "dev_user": dev_user,
+                "test_user": test_user,
+                "production_user": production_user,
+                "current_version": current_version,
+                "last_version": last_version,
+                "sql_info": sql_info,
+                "comment": comment,
+                "create_time": create_time,
+                "deploy_info": deploy_info,
+                "id": w_id,
+            }
+
+            approved_users = Users.select().where(Users.can_approved == 1)
+            to_list = [approved_user.email for approved_user in approved_users]
+            async_send_email(to_list, u"上线审批", email_data, e_type="approve")
             return response_json(200, '', 'ceate successful')
         except Exception, e:
+            print e
             return response_json(500, 'create failed', '')
     else:
         return ''
@@ -163,7 +187,8 @@ def my_flow():
                         'comment': per_flow.comment if per_flow.comment else '',
                         'deploy_info': per_flow.deploy_info,
                         'service': per_flow.service,
-                        'status': id_to_status(per_flow.status),
+                        'status_info': id_to_status(per_flow.status),
+                        'status': per_flow.status,
                     }
                     flow_data.append(per_flow_data)
             flow_count = len(flow_data)

@@ -23,6 +23,7 @@ class Users(BaseModel):
     is_active = CharField()
     name_pinyin = CharField()
     can_approved = CharField()
+    email = CharField()
 
     class Meta:
         db_table = 'users'

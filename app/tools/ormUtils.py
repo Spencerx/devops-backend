@@ -26,4 +26,28 @@ def id_to_status(id):
     return s.status_info
 
 
+def user_to_id(user):
+    u = Users.select().where(Users.username==user).get()
+    return u.id
+
+
+def team_to_id(team):
+    t = Teams.select().where(Teams.team_name == team).get()
+    return t.t
+
+
+def status_to_id(status):
+    s = Status.select().where(Status.status_info == status).get()
+    return s.s
+
+
+def service_to_id(service):
+    print type(service)
+    print "-----"
+    s = Services.select().where(Services.service_name == int(service)).get()
+    return s.id
+
+
+
+
 

@@ -4,7 +4,7 @@
 from flask import Flask
 from config import Config
 from jinja2.utils import import_string
-import os, logging
+import os, logging, commands
 from flask_cors import CORS
 
 blueprints = [
@@ -36,6 +36,7 @@ def load_config(app):
 
 
 def load_ext(app):
+    init_setup_img()
     # from .extensions import db
     # from .extensions import login_manager
     # from .extensions import cas
@@ -53,4 +54,35 @@ def register_blueprints(app):
     for bp_info in blueprints:
         bp = import_string(bp_info[0])
         app.register_blueprint(bp, url_prefix=bp_info[1])
+
+
+def init_setup_img():
+    pass
+    #     print """
+    #          ▄▄▄▄▄
+    #            ▀▀▀██████▄▄▄       _______________
+    #          ▄▄▄▄▄  █████████▄  /                 \
+    #         ▀▀▀▀█████▌ ▀▐▄ ▀▐█ |      devops!      |
+    #       ▀▀█████▄▄ ▀██████▄██ | _________________/
+    #       ▀▄▄▄▄▄  ▀▀█▄▀█════█▀ |/
+    #            ▀▀▀▄  ▀▀███ ▀       ▄▄
+    #         ▄███▀▀██▄████████▄ ▄▀▀▀▀▀▀█▌   ______________________________
+    #       ██▀▄▄▄██▀▄███▀ ▀▀████      ▄██  █                              \\
+    #    ▄▀▀▀▄██▄▀▀▌████▒▒▒▒▒▒███     ▌▄▄▀▀▀▀█_____________________________ //
+    #    ▌    ▐▀████▐███▒▒▒▒▒▐██▌
+    #    ▀▄▄▄▄▀   ▀▀████▒▒▒▒▄██▀
+    #              ▀▀█████████▀
+    #            ▄▄██▀██████▀█
+    #          ▄██▀     ▀▀▀  █
+    #         ▄█             ▐▌
+    #     ▄▄▄▄█▌              ▀█▄▄▄▄▀▀▄
+    #    ▌     ▐                ▀▀▄▄▄▀
+    #     ▀▀▄▄▀     ██
+    # \  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ ▀
+    # \- ▌   Vue2 axios elment-ui flask        ▀ ▀
+    #  - ▌                                         ▀
+    # /- ▌            Go Go Go !               ▀ ▀
+    # /  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ ▀
+    #               ██
+    #   """
 

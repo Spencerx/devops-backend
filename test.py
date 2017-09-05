@@ -19,32 +19,15 @@
 #for i in u:
 #    if i.can_approved:
 #     print i.can_approved
-
-import paramiko
-
-
-trans = paramiko.Transport(('192.168.15.255', 22))
-# 建立连接
-trans.connect(username='root', password='admin')
-
-# 实例化一个 sftp对象,指定连接的通道
-sftp = paramiko.SFTPClient.from_transport(trans)
-# 发送文件
-sftp.put(localpath='/Users/sunqilin/scripts/step1.sh', remotepath='/opt/step1.sh')
-# 下载文件
-# sftp.get(remotepath, localpath)
-
-
-
-
-# 将sshclient的对象的transport指定为以上的trans
-ssh = paramiko.SSHClient()
-ssh._transport = trans
-# 执行命令，和传统方法一样
-stdin, stdout, stderr = ssh.exec_command('sh /opt/step1.sh')
-print(stdout.read().decode())
-print "=="
-print(stderr.read().decode())
-trans.close()
-
-# 关闭连接
+# 导入模块
+from wxpy import *
+# 初始化机器人，扫码登陆
+bot = Bot(qr_path="./1.jpg")
+# bot.file_helper.send('Hello World!')
+# bot.self.send('Hello World!')
+print bot.self.name
+print bot.self.user_name
+print bot.self.wxid
+u = bot.user_details(bot.self.user_name)
+print u.sex
+bot.logout()

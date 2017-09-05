@@ -62,9 +62,9 @@ def workflow_history_search():
         is_deploy = form_data['is_deploy']
         if id:
             try:
-                workflow = Workflow.select().where(Workflow.w==id).get()
+                workflow = Workflow.select().where(Workflow.w == id).get()
             except Exception,e:
-                return response_json(200,'','')
+                return response_json(200, '', '')
             data = []
             per_flow = {
                 'ID': workflow.w,
@@ -121,7 +121,7 @@ def create_workflow():
             w_id = w.w
             email_data = {
                 "service": id_to_service(service),
-                "team_name": id_to_team(service),
+                "team_name": id_to_team(team_name),
                 "dev_user": dev_user,
                 "test_user": test_user,
                 "production_user": production_user,
@@ -196,3 +196,28 @@ def my_flow():
 
     else:
         return ''
+
+
+@workflow.route('/approved', methods=['POST', 'OPTION'])
+def approved():
+    if request.method == "POST":
+        json_data = request.get_json()
+        approved = json_data['approved']
+        suggestion = json_data['suggestion']
+        uid = json_data['uid']
+        w_id = json_data['w_id']
+        w = Workflow.select().where(Workflow.w == w_id).get()
+        if approved == "access":
+            w.status = int(w.status) + 1
+            w.approved_user = uid
+            w.save()
+            return response_json(200, "", "")
+        elif approved == "deny":
+            print "xxx"
+            w.status = 5
+            w.save()
+            return response_json(200, "", "")
+        else:
+            return response_json(500, u"审批参数无效", "")
+    else:
+        return ""

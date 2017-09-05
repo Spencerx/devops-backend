@@ -6,6 +6,7 @@ from app import create_app
 app = create_app()
 
 
+
 # 全局访问日志
 # logging.basicConfig(level=logging.DEBUG,
 #                 format='%(asctime)s %(levelname)s %(message)s',
@@ -13,18 +14,19 @@ app = create_app()
 #                 filename='{0}/production.log'.format(Config.LOG_DIR),
 #                 filemode='a+')
 
-
 @app.before_request
 def before_request():
     if request.method != 'OPTIONS':
         current_uri = request.path
         if current_uri.startswith("/api/v1/common") or current_uri.startswith("/api/v1/auth/login") \
                 or current_uri.startswith("/api/v1/auth/logout"):
-            print 'pass'
+            pass
+            # print 'pass'
         else:
             authorization = request.headers.get('Authorization', None)
             if authorization:
-                print authorization
+                pass
+                # print authorization
             else:
                 abort(401)
 

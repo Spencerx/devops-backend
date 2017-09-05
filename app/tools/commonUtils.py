@@ -7,7 +7,7 @@ monkey.patch_all()
 
 
 def send_email(to_list, subject, content):
-    yag = yagmail.SMTP(user='security@haixue.com', password='Haixue20170228', host='smtp.exmail.qq.com', port='465')
+    yag = yagmail.SMTP(user='sunqilin@haixue.com', password='Sql931005', host='smtp.exmail.qq.com', port='465')
     for receiver in to_list:
         yag.send(to=receiver, subject=subject, contents=content)
 

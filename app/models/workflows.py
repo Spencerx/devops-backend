@@ -30,6 +30,7 @@ class Workflow(BaseModel):
     w = PrimaryKeyField(db_column='w_id')
     approved_user = CharField()
     ops_user = CharField()
+    create_user = CharField()
 
     class Meta:
         db_table = 'workflow'

@@ -1,22 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import datetime
 from app.models.workflows import Workflow
 from flask import Blueprint, jsonify, request
 from app.tools.jsonUtils import response_json
-from app.tools.ormUtils import id_to_user, user_to_id, service_to_id, status_to_id, team_to_id
+from app.tools.ormUtils import id_to_user, user_to_id
 from app.tools.ormUtils import id_to_service
 from app.tools.ormUtils import id_to_team
 from app.tools.ormUtils import id_to_status
 from app.tools.commonUtils import async_send_email
 from app.models.users import Users
-import datetime
 
-workflow = Blueprint('workflow',__name__)
+
+workflow = Blueprint('workflow', __name__)
 
 
 @workflow.route('/history', methods=["GET", "POST"])
 def history():
+    """
+    获取历史工作流接口
+    :return:
+    """
     if request.method == 'POST':
         form_data = request.get_json()
         per_size = form_data['size']
@@ -55,8 +60,13 @@ def history():
         return response_json(200, '', {"count": workflow_count, "data": data})
 
 
-@workflow.route('/history/search',methods=['POST','OPTION'])
+@workflow.route('/history/search', methods=['POST', 'OPTION'])
 def workflow_history_search():
+    # todo
+    """
+    历史工作流按照条件搜索接口
+    :return:
+    """
     if request.method == 'POST':
         form_data = request.get_json()
         id = form_data['id']
@@ -66,7 +76,7 @@ def workflow_history_search():
         if id:
             try:
                 workflow = Workflow.select().where(Workflow.w == id).get()
-            except Exception,e:
+            except Exception, e:
                 return response_json(200, '', '')
             data = []
             per_flow = {
@@ -101,6 +111,10 @@ def workflow_history_search():
 
 @workflow.route('/create', methods=['POST', 'OPTION'])
 def create_workflow():
+    """
+    新建工作流接口
+    :return:
+    """
     if request.method == 'POST':
         form_data = request.get_json()
         service = form_data['service']
@@ -118,8 +132,9 @@ def create_workflow():
         create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         w = Workflow(service=service, create_time=create_time,
                      dev_user=dev_user, test_user=test_user, production_user=production_user,
-                     current_version=current_version, last_version=last_version, sql_info=sql_info,
-                     team_name=team_name, comment=comment, deploy_info=deploy_info, config=config, create_user=create_user)
+                     current_version=current_version, last_version=last_version,
+                     sql_info=sql_info,team_name=team_name, comment=comment,
+                     deploy_info=deploy_info, config=config, create_user=create_user)
 
         try:
             w.save()
@@ -152,6 +167,10 @@ def create_workflow():
 
 @workflow.route('/myflow', methods=['POST', 'OPTION'])
 def my_flow():
+    """
+    获取需要当前用户处理的工作流
+    :return:
+    """
     if request.method == "POST":
         req_data = request.get_json()
         uid = req_data['uid']
@@ -208,6 +227,10 @@ def my_flow():
 
 @workflow.route('/approved', methods=['POST', 'OPTION'])
 def approved():
+    """
+    工作流审批接口
+    :return:
+    """
     if request.method == "POST":
         json_data = request.get_json()
         approved = json_data['approved']
@@ -236,6 +259,10 @@ def approved():
 
 @workflow.route('/sure_deploy', methods=['POST', 'OPTION'])
 def sure_deploy():
+    """
+    确认工作流中服务上线接口
+    :return:
+    """
     if request.method == "POST":
         json_data = request.get_json()
         uid = json_data['uid']
@@ -254,6 +281,10 @@ def sure_deploy():
 
 @workflow.route('/sure_test', methods=['POST', 'OPTION'])
 def sure_test():
+    """
+    测试确认上线服务正常接口
+    :return:
+    """
     if request.method == "POST":
         json_data = request.get_json()
         w_id = json_data['w_id']

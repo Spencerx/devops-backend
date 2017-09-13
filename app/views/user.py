@@ -12,6 +12,10 @@ user = Blueprint('user', __name__)
 
 @user.route('/userinfo', methods=['POST'])
 def userinfo():
+    """
+    获取用户信息接口
+    :return:
+    """
     if request.method == 'POST':
         token = request.headers.get('Authorization', None)
         if token:

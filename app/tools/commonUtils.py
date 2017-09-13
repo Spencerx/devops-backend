@@ -7,12 +7,27 @@ monkey.patch_all()
 
 
 def send_email(to_list, subject, content):
+    """
+    发送邮件接口
+    :param to_list: 邮件接收人 列表类型
+    :param subject: 邮件主题
+    :param content: 邮件主题正文
+    :return:
+    """
     yag = yagmail.SMTP(user='security@haixue.com', password='', host='smtp.exmail.qq.com', port='465')
     for receiver in to_list:
         yag.send(to=receiver, subject=subject, contents=content)
 
 
 def async_send_email(to_list, subject, data, e_type):
+    """
+    新建线程 发送邮件
+    :param to_list:
+    :param subject:
+    :param data:
+    :param e_type: 邮件类型 例如 审批等等
+    :return:
+    """
     if e_type == "approve":
         html = """
         <html><body>

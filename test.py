@@ -20,14 +20,6 @@
 #    if i.can_approved:
 #     print i.can_approved
 # 导入模块
-from wxpy import *
-# 初始化机器人，扫码登陆
-bot = Bot(qr_path="./1.jpg")
-# bot.file_helper.send('Hello World!')
-# bot.self.send('Hello World!')
-print bot.self.name
-print bot.self.user_name
-print bot.self.wxid
-u = bot.user_details(bot.self.user_name)
-print u.sex
-bot.logout()
+
+
+

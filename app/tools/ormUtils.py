@@ -5,6 +5,8 @@ from app.models.teams import Teams
 from app.models.services import Services
 from app.models.status import Status
 
+# id和中文名的转换工具集
+
 
 def id_to_team(id):
     t = Teams.select().where(Teams.t==id).get()
@@ -42,8 +44,6 @@ def status_to_id(status):
 
 
 def service_to_id(service):
-    print type(service)
-    print "-----"
     s = Services.select().where(Services.service_name == int(service)).get()
     return s.id
 

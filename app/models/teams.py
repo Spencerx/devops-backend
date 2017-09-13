@@ -16,6 +16,10 @@ class BaseModel(Model):
 class Teams(BaseModel):
     t = PrimaryKeyField(db_column='t_id')
     team_name = CharField()
+    team_leader = CharField()
+    team_status = CharField()
+    create_time = DateTimeField()
+
 
     class Meta:
         db_table = 'teams'

@@ -7,7 +7,7 @@ monkey.patch_all()
 
 
 def send_email(to_list, subject, content):
-    yag = yagmail.SMTP(user='xxxx', password='xxxxxxx', host='smtp.exmail.qq.com', port='465')
+    yag = yagmail.SMTP(user='security@haixue.com', password='', host='smtp.exmail.qq.com', port='465')
     for receiver in to_list:
         yag.send(to=receiver, subject=subject, contents=content)
 
@@ -72,22 +72,28 @@ def async_send_email(to_list, subject, data, e_type):
     <td style="background-color: #56b6c2">SQL</td>
     <td style="background-color: grey">{9}</td>
   </tr>
-
-  <tr>
-    <td style="background-color: #56b6c2">上线详情</td>
+  
+   <tr>
+    <td style="background-color: #56b6c2">配置变更</td>
     <td style="background-color: grey">{10}</td>
   </tr>
 
   <tr>
-    <td style="background-color: #56b6c2">备注</td>
+    <td style="background-color: #56b6c2">上线详情</td>
     <td style="background-color: grey">{11}</td>
+  </tr>
+
+  <tr>
+    <td style="background-color: #56b6c2">备注</td>
+    <td style="background-color: grey">{12}</td>
   </tr>
   </tbody>
 </table>
 <div>
 </body></html>      
         """.format(data["id"], data["team_name"], data["service"], data["current_version"], data["last_version"],
-                   data["dev_user"], data["test_user"], data["production_user"], data["create_time"], data["sql_info"], data['deploy_info'], data["comment"])
+                   data["dev_user"], data["test_user"], data["production_user"], data["create_time"], data["sql_info"],
+                   data["config"], data['deploy_info'], data["comment"])
     thr = threading.Thread(target=send_email, args=[to_list, subject, html])  # 创建线程
     thr.start()
 

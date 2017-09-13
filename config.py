@@ -15,12 +15,12 @@ class Config():
     REMEMBER_COOKIE_DURATION = timedelta(
         seconds=3600 * 8)  # set session timeout time
     WTF_CSRF_CHECK_DEFAULT = False
-    #SECRET_KEY = os.urandom(32)
+    # SECRET_KEY = os.urandom(32)
 
 
 class Dev(Config):
     DEBUG = True
-    secret_key='5as7**%sd5^s7x)!'
+    secret_key = '5as7**%sd5^s7x)!'
     DATABASE = {
         'host': '192.168.132.229',
         'port': 3306,
@@ -28,15 +28,21 @@ class Dev(Config):
         'passwd': 'docker',
         'db': 'blog'
     }
+    SQLADVISOR_DB = {
+        'host': '42.62.97.87',
+        'port': 3306,
+        'user': 'techdb1',
+        'password': 'techdb1#@!812!',
+    }
 
     # salt api
     SALT_BASE_URL = 'https://192.168.234.132:8000'
     SALT_LOGIN_URL = 'https://192.168.234.132:8000/login'
-    SALT_USERNAME='saltapi'
-    SALT_PASSWORD='admin'
-    SALT_EAUTH='pam'
+    SALT_USERNAME = 'saltapi'
+    SALT_PASSWORD = 'admin'
+    SALT_EAUTH = 'pam'
 
-    #redis
+    # redis
     REDIS_URL = '127.0.0.1'
     REDIS_PORT = 6379
 

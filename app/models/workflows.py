@@ -31,6 +31,9 @@ class Workflow(BaseModel):
     approved_user = CharField()
     ops_user = CharField()
     create_user = CharField()
+    config = CharField()
+    deny_info = CharField()
+    access_info = CharField()
 
     class Meta:
         db_table = 'workflow'

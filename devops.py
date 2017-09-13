@@ -28,7 +28,8 @@ def before_request():
                 pass
                 # print authorization
             else:
-                abort(401)
+                pass
+                # abort(401)
 
     else:
         pass
@@ -53,4 +54,4 @@ def before_request():
 #     return response
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8888)
+    app.run(debug=True, host='0.0.0.0', port=8888, threaded=True)

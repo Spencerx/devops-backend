@@ -13,12 +13,9 @@ class BaseModel(Model):
         database = create_peewee_connection()
 
 
-class Teams(BaseModel):
-    t = PrimaryKeyField(db_column='t_id')
-    team_name = CharField()
-    team_leader = CharField()
-    team_status = CharField()
-    create_time = DateTimeField()
+class Roles(BaseModel):
+    r = PrimaryKeyField(db_column='r_id')
+    role_name = CharField()
 
     class Meta:
-        db_table = 'teams'
+        db_table = 'roles'

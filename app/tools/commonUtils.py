@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import yagmail, threading
+import yagmail
+import threading
 from gevent import monkey
 monkey.patch_all()
 

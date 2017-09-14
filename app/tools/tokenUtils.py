@@ -3,7 +3,7 @@
 from redisUtils import create_redis_connection
 import time
 import base64
-from pyDes import triple_des,CBC,PAD_PKCS5
+from pyDes import triple_des, CBC, PAD_PKCS5
 from config import Config
 
 

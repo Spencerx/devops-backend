@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#python -m pwiz -e mysql -H 192.168.234.132 -p3306 -uroot -P  devops > db.py
+# python -m pwiz -e mysql -H 127.0.0.1 -p3306 -uroot -P  devops > db.py
 from app.tools.peeweeUtils import create_peewee_connection
 
 from peewee import *
@@ -24,6 +24,7 @@ class Users(BaseModel):
     name_pinyin = CharField()
     can_approved = CharField()
     email = CharField()
+    name = CharField()
 
     class Meta:
         db_table = 'users'

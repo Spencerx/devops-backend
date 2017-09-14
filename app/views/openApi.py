@@ -9,6 +9,7 @@ from flask import Blueprint, jsonify, request, current_app
 from app.models.teams import Teams
 from app.models.services import Services
 from app.models.users import Users
+from app.models.roles import Roles
 from app.tools.jsonUtils import response_json
 
 common = Blueprint('common',__name__)
@@ -146,3 +147,23 @@ def check_sql():
         return response_json(200, "", o)
     else:
         return ""
+
+
+@common.route('/role')
+def roles_list():
+    """
+    获取所有类型角色接口
+    :return:
+    """
+    try:
+        roles = Roles.select()
+        data = []
+        for role in roles:
+            per_role = {
+                'id': role.r,
+                'role_name': role.role_name
+            }
+            data.append(per_role)
+        return response_json(200, '', data)
+    except Exception, e:
+        return response_json(500, e, '')

@@ -9,43 +9,67 @@ from app.models.status import Status
 
 
 def id_to_team(id):
-    t = Teams.select().where(Teams.t==id).get()
-    return t.team_name
+    try:
+        t = Teams.select().where(Teams.t == id).get()
+        return t.team_name
+    except Exception, e:
+        return ""
 
 
 def id_to_user(id):
-    u = Users.select().where(Users.id==id).get()
-    return u.username
+    try:
+        u = Users.select().where(Users.id == id).get()
+        return u.username
+    except Exception, e:
+        return ""
 
 
 def id_to_service(id):
-    s = Services.select().where(Services.s == id).get()
-    return s.service_name
+    try:
+        s = Services.select().where(Services.s == id).get()
+        return s.service_name
+    except Exception, e:
+        return ""
 
 
 def id_to_status(id):
-    s = Status.select().where(Status.s == id).get()
-    return s.status_info
+    try:
+        s = Status.select().where(Status.s == id).get()
+        return s.status_info
+    except Exception, e:
+        return ""
 
 
 def user_to_id(user):
-    u = Users.select().where(Users.username==user).get()
-    return u.id
+    try:
+        u = Users.select().where(Users.username == user).get()
+        return u.id
+    except Exception, e:
+        return ""
 
 
 def team_to_id(team):
-    t = Teams.select().where(Teams.team_name == team).get()
-    return t.t
+    try:
+        t = Teams.select().where(Teams.team_name == team).get()
+        return t.t
+    except Exception, e:
+        return ""
 
 
 def status_to_id(status):
-    s = Status.select().where(Status.status_info == status).get()
-    return s.s
+    try:
+        s = Status.select().where(Status.status_info == status).get()
+        return s.s
+    except Exception, e:
+        return ""
 
 
 def service_to_id(service):
-    s = Services.select().where(Services.service_name == int(service)).get()
-    return s.id
+    try:
+        s = Services.select().where(Services.service_name == int(service)).get()
+        return s.id
+    except Exception, e:
+        return ""
 
 
 

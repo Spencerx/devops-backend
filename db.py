@@ -1,6 +1,6 @@
 from peewee import *
 
-database = MySQLDatabase('devops', **{'host': '192.168.234.132', 'password': 'admin', 'port': 3306, 'user': 'root'})
+database = MySQLDatabase('devops', **{'host': '127.0.0.1', 'password': 'admin', 'port': 3306, 'user': 'root'})
 
 class UnknownField(object):
     def __init__(self, *_, **__): pass
@@ -32,15 +32,21 @@ class Status(BaseModel):
         db_table = 'status'
 
 class Teams(BaseModel):
+    create_time = DateTimeField()
     t = PrimaryKeyField(db_column='t_id')
+    team_leader = CharField(null=True)
     team_name = CharField()
+    team_status = IntegerField()
 
     class Meta:
         db_table = 'teams'
 
 class Users(BaseModel):
+    can_approved = IntegerField()
+    email = CharField()
     is_active = CharField()
-    password = CharField()
+    name_pinyin = CharField(null=True)
+    password = CharField(null=True)
     role = IntegerField()
     username = CharField()
 
@@ -48,15 +54,19 @@ class Users(BaseModel):
         db_table = 'users'
 
 class Workflow(BaseModel):
+    access_info = CharField(null=True)
     approved_user = IntegerField(null=True)
     close_time = DateTimeField(null=True)
     comment = CharField(null=True)
+    config = CharField(null=True)
     create_time = DateTimeField()
+    create_user = CharField()
     current_version = CharField()
+    deny_info = CharField(null=True)
     deploy_info = CharField(null=True)
     dev_user = IntegerField()
     last_version = CharField(null=True)
-    ops_user = IntegerField()
+    ops_user = IntegerField(null=True)
     production_user = IntegerField()
     service = CharField()
     sql_info = CharField(null=True)

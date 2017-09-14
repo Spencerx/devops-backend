@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from flask import request, abort
+from flask import request
 from app import create_app
 app = create_app()
-
 
 
 # 全局访问日志
@@ -13,7 +12,6 @@ app = create_app()
 #                 datefmt='%a, %d %b %Y %H:%M:%S',
 #                 filename='{0}/production.log'.format(Config.LOG_DIR),
 #                 filemode='a+')
-
 @app.before_request
 def before_request():
     if request.method != 'OPTIONS':

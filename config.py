@@ -6,6 +6,8 @@ from datetime import timedelta
 
 
 class Config():
+    def __init__(self):
+        pass
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     FILES_DIR = os.path.join(BASE_DIR, 'files')
     UPLOAD_DIR = os.path.join(FILES_DIR, 'uploads')
@@ -19,6 +21,8 @@ class Config():
 
 
 class Dev(Config):
+    def __init__(self):
+        pass
     DEBUG = True
     secret_key = '5as7**%sd5^s7x)!'
     DATABASE = {
@@ -48,4 +52,6 @@ class Dev(Config):
 
 
 class Prod(Config):
+    def __init__(self):
+        pass
     pass

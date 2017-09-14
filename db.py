@@ -9,6 +9,12 @@ class BaseModel(Model):
     class Meta:
         database = database
 
+class FlowTyle(BaseModel):
+    type = CharField()
+
+    class Meta:
+        db_table = 'flow_tyle'
+
 class Roles(BaseModel):
     r = PrimaryKeyField(db_column='r_id')
     role_name = CharField()
@@ -45,6 +51,7 @@ class Users(BaseModel):
     can_approved = IntegerField()
     email = CharField()
     is_active = CharField()
+    name = CharField(null=True)
     name_pinyin = CharField(null=True)
     password = CharField(null=True)
     role = IntegerField()
@@ -61,18 +68,21 @@ class Workflow(BaseModel):
     config = CharField(null=True)
     create_time = DateTimeField()
     create_user = CharField()
-    current_version = CharField()
+    current_version = CharField(null=True)
     deny_info = CharField(null=True)
+    deploy_end_time = DateTimeField(null=True)
     deploy_info = CharField(null=True)
-    dev_user = IntegerField()
+    deploy_start_time = DateTimeField(null=True)
+    dev_user = IntegerField(null=True)
     last_version = CharField(null=True)
     ops_user = IntegerField(null=True)
-    production_user = IntegerField()
-    service = CharField()
+    production_user = IntegerField(null=True)
+    service = CharField(null=True)
     sql_info = CharField(null=True)
     status = IntegerField()
     team_name = IntegerField()
     test_user = IntegerField()
+    type = IntegerField()
     w = PrimaryKeyField(db_column='w_id')
 
     class Meta:

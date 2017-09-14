@@ -31,6 +31,6 @@ def decrypt_token(token):
     try:
         token = base64.b64decode(token)
         username = k.decrypt(token).split('$$$$')[0]
-    except Exception,e:
+    except Exception, e:
         username = ''
     return username

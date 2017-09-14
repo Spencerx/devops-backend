@@ -17,6 +17,8 @@ class Workflow(BaseModel):
     comment = CharField(null=True)
     create_time = DateTimeField()
     close_time = DateTimeField()
+    deploy_start_time = DateTimeField()
+    deploy_end_time = DateTimeField()
     current_version = CharField()
     deploy_info = CharField(null=True)
     dev_user = CharField()
@@ -34,6 +36,7 @@ class Workflow(BaseModel):
     config = CharField()
     deny_info = CharField()
     access_info = CharField()
+    type = IntegerField()
 
     class Meta:
         db_table = 'workflow'

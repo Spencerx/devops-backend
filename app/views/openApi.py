@@ -69,7 +69,8 @@ def user_list():
         for user in users:
             per_user = {
                 'id': user.id,
-                'username': user.username
+                'username': user.username,
+                'name': user.name
             }
             data.append(per_user)
         return response_json(200, '', data=data)

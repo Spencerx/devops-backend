@@ -3,14 +3,15 @@
 
 import datetime
 from app.models.workflows import Workflow
+from app.models.users import Users
+from app.models.flow_type import FlowTyle
 from flask import Blueprint, jsonify, request
 from app.tools.jsonUtils import response_json
-from app.tools.ormUtils import id_to_user, user_to_id
+from app.tools.ormUtils import id_to_user
 from app.tools.ormUtils import id_to_service
 from app.tools.ormUtils import id_to_team
 from app.tools.ormUtils import id_to_status
 from app.tools.commonUtils import async_send_email
-from app.models.users import Users
 
 
 workflow = Blueprint('workflow', __name__)
@@ -117,46 +118,124 @@ def create_workflow():
     """
     if request.method == 'POST':
         form_data = request.get_json()
-        service = form_data['service']
-        team_name = form_data['team_name']
-        dev_user = user_to_id(form_data['dev_user'])
-        test_user = user_to_id(form_data['test_user'])
-        create_user = form_data['create_user']
-        production_user = user_to_id(form_data['production_user'])
-        current_version = form_data['current_version']
-        last_version = form_data['last_version']
-        sql_info = form_data['sql_info']
-        comment = form_data['comment']
-        deploy_info = form_data['deploy_info']
-        config = form_data['config']
-        create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        w = Workflow(service=service, create_time=create_time,
-                     dev_user=dev_user, test_user=test_user, production_user=production_user,
-                     current_version=current_version, last_version=last_version,
-                     sql_info=sql_info,team_name=team_name, comment=comment,
-                     deploy_info=deploy_info, config=config, create_user=create_user)
+        flow_type = form_data['flow_type']
+        utc_format = "%Y-%m-%dT%H:%M:%S.%fZ"
+        # 判断工作流类型 来区分处理逻辑
+        # 系统上线
+        if flow_type == 1:
+            service = form_data['service']
+            team_name = form_data['team_name']
+            dev_user = int(form_data['dev_user'])
+            test_user = int(form_data['test_user'])
+            create_user = form_data['create_user']
+            production_user = int(form_data['production_user'])
+            current_version = form_data['current_version']
+            last_version = form_data['last_version']
+            sql_info = form_data['sql_info']
+            comment = form_data['comment']
+            deploy_info = form_data['deploy_info']
+            config = form_data['config']
+            create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            w = Workflow(service=service, create_time=create_time,
+                         dev_user=dev_user, test_user=test_user, production_user=production_user,
+                         current_version=current_version, last_version=last_version, type=flow_type,
+                         sql_info=sql_info, team_name=team_name, comment=comment,
+                         deploy_info=deploy_info, config=config, create_user=create_user)
 
+        # 数据库变更
+        elif flow_type == 2:
+            team_name = form_data['team_name']
+            test_user = int(form_data['test_user'])
+            create_user = form_data['create_user']
+            sql_info = form_data['sql_info']
+            comment = form_data['comment']
+            deploy_start_time = datetime.datetime.strptime(form_data['deploy_time'][0], utc_format).\
+                strftime('%Y-%m-%d %H:%M:%S')
+            deploy_end_time = datetime.datetime.strptime(form_data['deploy_time'][1], utc_format).\
+                strftime('%Y-%m-%d %H:%M:%S')
+            create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            w = Workflow(create_time=create_time, test_user=test_user, type=flow_type,
+                         sql_info=sql_info, team_name=team_name, comment=comment, create_user=create_user,
+                         deploy_start_time=deploy_start_time, deploy_end_time=deploy_end_time)
+        # 配置变更
+        elif flow_type == 3:
+            service = form_data['service']
+            team_name = form_data['team_name']
+            test_user = int(form_data['test_user'])
+            create_user = form_data['create_user']
+            sql_info = form_data['sql_info']
+            comment = form_data['comment']
+            deploy_start_time = form_data['deploy_time'][0]
+            deploy_end_time = form_data['deploy_time'][1]
+            create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            w = Workflow(service=service, create_time=create_time, test_user=test_user, type=flow_type,
+                         sql_info=sql_info, team_name=team_name, comment=comment, create_user=create_user,
+                         deploy_start_time=deploy_start_time, deploy_end_time=deploy_end_time)
+        # 权限申请
+        elif flow_type == 4:
+            pass
+
+        # 不明确的工作流类型
+        else:
+            return response_json(500, u'工作流类型不明确', '')
         try:
             w.save()
             w_id = w.w
-            email_data = {
-                "service": id_to_service(service),
-                "team_name": id_to_team(team_name),
-                "dev_user": id_to_user(dev_user),
-                "test_user": id_to_user(test_user),
-                "production_user": id_to_user(production_user),
-                "current_version": current_version,
-                "last_version": last_version,
-                "sql_info": sql_info,
-                "comment": comment,
-                "create_time": create_time,
-                "deploy_info": deploy_info,
-                "config": config,
-                "id": w_id,
-            }
+            # 工作流类型不同 则邮件发送内容不同
             approved_users = Users.select().where(Users.can_approved == 1)
             to_list = [approved_user.email for approved_user in approved_users]
-            async_send_email(to_list, u"上线审批", email_data, e_type="approve")
+            if flow_type == 'code_deploy':
+                email_data = {
+                    "service": id_to_service(service),
+                    "team_name": id_to_team(team_name),
+                    "dev_user": id_to_user(dev_user),
+                    "test_user": id_to_user(test_user),
+                    "production_user": id_to_user(production_user),
+                    "current_version": current_version,
+                    "last_version": last_version,
+                    "sql_info": sql_info,
+                    "comment": comment,
+                    "create_time": create_time,
+                    "deploy_info": deploy_info,
+                    "config": config,
+                    "id": w_id,
+                }
+                async_send_email(to_list, u"上线审批", email_data, e_type="approve")
+
+            elif flow_type == 'sql_deploy':
+                email_data = {
+                    "team_name": id_to_team(team_name),
+                    "test_user": id_to_user(test_user),
+                    "sql_info": sql_info,
+                    "comment": comment,
+                    "create_time": create_time,
+                    "deploy_start_time": deploy_start_time,
+                    "deploy_end_time": deploy_end_time,
+                    "id": w_id,
+                }
+                async_send_email(to_list, u"数据库变更审批", email_data, e_type="approve")
+
+            elif flow_type == 'config_deploy':
+                email_data = {
+                    "service": id_to_service(service),
+                    "team_name": id_to_team(team_name),
+                    "dev_user": id_to_user(dev_user),
+                    "test_user": id_to_user(test_user),
+                    "production_user": id_to_user(production_user),
+                    "current_version": current_version,
+                    "last_version": last_version,
+                    "sql_info": sql_info,
+                    "comment": comment,
+                    "create_time": create_time,
+                    "deploy_info": deploy_info,
+                    "config": config,
+                    "id": w_id,
+                }
+                async_send_email(to_list, u"配置变更审批", email_data, e_type="approve")
+
+            else:
+                pass
+
             return response_json(200, '', 'ceate successful')
         except Exception, e:
             print e
@@ -298,3 +377,23 @@ def sure_test():
             return response_json(500, e, '')
     else:
         return ""
+
+
+@workflow.route('/type')
+def flow_type_list():
+    """
+    获取工作流所有类型接口
+    :return:
+    """
+    ts = FlowTyle.select()
+    data = []
+    for t in ts:
+        per_type = {
+            'id': t.id,
+            'type': t.type
+        }
+        data.append(per_type)
+    return response_json(200, '', data=data)
+
+
+

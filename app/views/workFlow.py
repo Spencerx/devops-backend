@@ -7,10 +7,7 @@ from app.models.users import Users
 from app.models.flow_type import FlowTyle
 from flask import Blueprint, jsonify, request
 from app.tools.jsonUtils import response_json
-from app.tools.ormUtils import id_to_user
-from app.tools.ormUtils import id_to_service
-from app.tools.ormUtils import id_to_team
-from app.tools.ormUtils import id_to_status
+from app.tools.ormUtils import id_to_user, id_to_service, id_to_team, id_to_status, id_to_flow_type
 from app.tools.commonUtils import async_send_email
 
 
@@ -28,9 +25,10 @@ def history():
         per_size = form_data['size']
         page_count = form_data['page']
         if page_count == 0:
-            ws = Workflow.select().limit(10)
+            ws = Workflow.select().limit(10).order_by(Workflow.w.desc())
         else:
-            ws = Workflow.select().limit(int(per_size)).offset((int(page_count)-1)*int(per_size))
+            ws = Workflow.select().limit(int(per_size)).offset((int(page_count)-1)*int(per_size)).\
+                order_by(Workflow.w.desc())
         data = []
         for workflow in ws:
             per_flow = {
@@ -43,6 +41,7 @@ def history():
                 'create_user': id_to_user(workflow.create_user),
                 'sql_info': workflow.sql_info,
                 'production_user': id_to_user(workflow.production_user),
+                'flow_type': id_to_flow_type(workflow.type),
                 'current_version': workflow.current_version,
                 'last_version': workflow.last_version,
                 'comment': workflow.comment,
@@ -78,6 +77,7 @@ def workflow_history_search():
             try:
                 workflow = Workflow.select().where(Workflow.w == id).get()
             except Exception, e:
+                print e
                 return response_json(200, '', '')
             data = []
             per_flow = {
@@ -95,7 +95,7 @@ def workflow_history_search():
                 'service': workflow.service,
                 'status': workflow.status,
                 'status_info': id_to_status(workflow.status),
-                'approved_user':workflow.approved_user
+                'approved_user': workflow.approved_user
             }
             data.append(per_flow)
             if data:
@@ -104,8 +104,6 @@ def workflow_history_search():
                 return jsonify('')
         else:
             pass
-            # workflow = Workflow.select().where(Workflow.team_name).get()
-
     else:
         return ''
 
@@ -265,7 +263,6 @@ def my_flow():
         if int(user_role) == 4:
             flows = Workflow.select().where((Workflow.status == 3) & (Workflow.test_user == uid))
             for flow in flows:
-                print flow
                 workflow_list.append(flow.w)
 
         if can_approved:
@@ -282,7 +279,7 @@ def my_flow():
                 for per_flow in flows:
                     per_flow_data = {
                         'ID': per_flow.w,
-                        'create_time': per_flow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
+                        'create_time': per_flow.create_time.strftime('%Y-%m-%d %H:%M:%S'),
                         'team_name': per_flow.team_name,
                         'sql_info': per_flow.sql_info if per_flow.sql_info else '',
                         'test_user': id_to_user(per_flow.test_user) if per_flow.test_user else '',
@@ -295,6 +292,7 @@ def my_flow():
                         'status_info': id_to_status(per_flow.status),
                         'status': per_flow.status,
                         'config': per_flow.config if per_flow.config else '',
+                        'flow_type': id_to_flow_type(per_flow.type),
                     }
                     flow_data.append(per_flow_data)
             flow_count = len(flow_data)

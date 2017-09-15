@@ -5,6 +5,7 @@ from app.models.teams import Teams
 from app.models.services import Services
 from app.models.status import Status
 from app.models.flow_type import FlowTyle
+from app.models.roles import Roles
 
 # id和中文名的转换工具集
 
@@ -48,6 +49,13 @@ def id_to_flow_type(id):
     except Exception, e:
         return ""
 
+def id_to_role(id):
+    try:
+        s = Roles.select().where(Roles.r == id).get()
+        return s.role_name
+    except Exception, e:
+        return ""
+
 
 def user_to_id(user):
     try:
@@ -83,8 +91,16 @@ def service_to_id(service):
 
 def flow_type_to_id(flow_type):
     try:
-        s = FlowTyle.select().where(FlowTyle.id == int(flow_type)).get()
+        s = FlowTyle.select().where(FlowTyle.type == flow_type).get()
         return s.id
+    except Exception, e:
+        return ""
+
+
+def role_to_id(role):
+    try:
+        s = Roles.select().where(Roles.role_name == role).get()
+        return s.r
     except Exception, e:
         return ""
 

@@ -24,6 +24,7 @@ class Users(BaseModel):
     can_approved = CharField()
     email = CharField()
     name = CharField()
+    create_time = DateTimeField()
 
     class Meta:
         db_table = 'users'

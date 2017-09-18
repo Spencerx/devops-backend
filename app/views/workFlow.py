@@ -5,9 +5,9 @@ import datetime
 from app.models.workflows import Workflow
 from app.models.users import Users
 from app.models.flow_type import FlowTyle
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request, current_app
 from app.tools.jsonUtils import response_json
-from app.tools.ormUtils import id_to_user, id_to_service, id_to_team, id_to_status, id_to_flow_type
+from app.tools.ormUtils import id_to_user, id_to_service, id_to_team, id_to_status, id_to_flow_type, service_to_id
 from app.tools.commonUtils import async_send_email
 
 
@@ -78,7 +78,7 @@ def workflow_history_search():
                 workflow = Workflow.select().where(Workflow.w == id).get()
             except Exception, e:
                 print e
-                return response_json(200, '', '')
+                return response_json(200, '', {'count': 0, 'data': []})
             data = []
             per_flow = {
                 'ID': workflow.w,
@@ -98,10 +98,8 @@ def workflow_history_search():
                 'approved_user': workflow.approved_user
             }
             data.append(per_flow)
-            if data:
-                return jsonify(data)
-            else:
-                return jsonify('')
+            flow_count = len(data)
+            return response_json(200, '', {'count': flow_count, 'data': data})
         else:
             pass
     else:
@@ -118,27 +116,54 @@ def create_workflow():
         form_data = request.get_json()
         flow_type = form_data['flow_type']
         utc_format = "%Y-%m-%dT%H:%M:%S.%fZ"
+        approved_users = Users.select().where(Users.can_approved == 1)
+        to_list = [approved_user.email for approved_user in approved_users]
         # 判断工作流类型 来区分处理逻辑
         # 系统上线
         if flow_type == 1:
-            service = form_data['service']
+            services = form_data['service']
+            mail_services = ''
+            mail_ids = ''
+            mail_versions = ''
             team_name = form_data['team_name']
             dev_user = int(form_data['dev_user'])
             test_user = int(form_data['test_user'])
             create_user = form_data['create_user']
             production_user = int(form_data['production_user'])
-            current_version = form_data['current_version']
-            last_version = form_data['last_version']
             sql_info = form_data['sql_info']
             comment = form_data['comment']
             deploy_info = form_data['deploy_info']
             config = form_data['config']
             create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            w = Workflow(service=service, create_time=create_time,
-                         dev_user=dev_user, test_user=test_user, production_user=production_user,
-                         current_version=current_version, last_version=last_version, type=flow_type,
-                         sql_info=sql_info, team_name=team_name, comment=comment,
-                         deploy_info=deploy_info, config=config, create_user=create_user)
+            for service in services:
+                service_name = service['service']
+                version = service['version']
+                mail_services = mail_services + service_name + " "
+                mail_versions = mail_versions + version + " "
+                w = Workflow(service=service_to_id(service_name), create_time=create_time,
+                             dev_user=dev_user, test_user=test_user, production_user=production_user,
+                             current_version=version, type=flow_type,
+                             sql_info=sql_info, team_name=team_name, comment=comment,
+                             deploy_info=deploy_info, config=config, create_user=create_user)
+                w.save()
+                w_id = w.w
+                mail_ids = mail_ids + str(w_id) + " "
+            email_data = {
+                "service": mail_services,
+                "version": mail_versions,
+                "team_name": id_to_team(team_name),
+                "dev_user": id_to_user(dev_user),
+                "test_user": id_to_user(test_user),
+                "production_user": id_to_user(production_user),
+                "sql_info": sql_info,
+                "comment": comment,
+                "create_time": create_time,
+                "deploy_info": deploy_info,
+                "config": config,
+                "id": mail_ids,
+            }
+            async_send_email(to_list, u"上线审批", email_data, e_type=flow_type)
+            return response_json(200, '', 'ceate successful')
 
         # 数据库变更
         elif flow_type == 2:
@@ -155,6 +180,21 @@ def create_workflow():
             w = Workflow(create_time=create_time, test_user=test_user, type=flow_type,
                          sql_info=sql_info, team_name=team_name, comment=comment, create_user=create_user,
                          deploy_start_time=deploy_start_time, deploy_end_time=deploy_end_time)
+            w.save()
+            w_id = w.w
+            email_data = {
+                "team_name": id_to_team(team_name),
+                "test_user": id_to_user(test_user),
+                "sql_info": sql_info,
+                "comment": comment,
+                "create_time": create_time,
+                "deploy_start_time": deploy_start_time,
+                "deploy_end_time": deploy_end_time,
+                "id": w_id,
+            }
+            async_send_email(to_list, u"数据库变更审批", email_data, e_type=flow_type)
+            return response_json(200, '', 'ceate successful')
+
         # 配置变更
         elif flow_type == 3:
             service = form_data['service']
@@ -162,6 +202,7 @@ def create_workflow():
             test_user = int(form_data['test_user'])
             create_user = form_data['create_user']
             sql_info = form_data['sql_info']
+            config = form_data['config']
             comment = form_data['comment']
             deploy_start_time = form_data['deploy_time'][0]
             deploy_end_time = form_data['deploy_time'][1]
@@ -169,6 +210,21 @@ def create_workflow():
             w = Workflow(service=service, create_time=create_time, test_user=test_user, type=flow_type,
                          sql_info=sql_info, team_name=team_name, comment=comment, create_user=create_user,
                          deploy_start_time=deploy_start_time, deploy_end_time=deploy_end_time)
+            w.save()
+            w_id = w.w
+            email_data = {
+                "service": id_to_service(service),
+                "team_name": id_to_team(team_name),
+                "test_user": id_to_user(test_user),
+                "sql_info": sql_info,
+                "comment": comment,
+                "create_time": create_time,
+                "config": config,
+                "id": w_id,
+            }
+            async_send_email(to_list, u"配置变更审批", email_data, e_type="approve")
+            return response_json(200, '', 'ceate successful')
+
         # 权限申请
         elif flow_type == 4:
             pass
@@ -176,68 +232,6 @@ def create_workflow():
         # 不明确的工作流类型
         else:
             return response_json(500, u'工作流类型不明确', '')
-        try:
-            w.save()
-            w_id = w.w
-            # 工作流类型不同 则邮件发送内容不同
-            approved_users = Users.select().where(Users.can_approved == 1)
-            to_list = [approved_user.email for approved_user in approved_users]
-            if flow_type == 'code_deploy':
-                email_data = {
-                    "service": id_to_service(service),
-                    "team_name": id_to_team(team_name),
-                    "dev_user": id_to_user(dev_user),
-                    "test_user": id_to_user(test_user),
-                    "production_user": id_to_user(production_user),
-                    "current_version": current_version,
-                    "last_version": last_version,
-                    "sql_info": sql_info,
-                    "comment": comment,
-                    "create_time": create_time,
-                    "deploy_info": deploy_info,
-                    "config": config,
-                    "id": w_id,
-                }
-                async_send_email(to_list, u"上线审批", email_data, e_type="approve")
-
-            elif flow_type == 'sql_deploy':
-                email_data = {
-                    "team_name": id_to_team(team_name),
-                    "test_user": id_to_user(test_user),
-                    "sql_info": sql_info,
-                    "comment": comment,
-                    "create_time": create_time,
-                    "deploy_start_time": deploy_start_time,
-                    "deploy_end_time": deploy_end_time,
-                    "id": w_id,
-                }
-                async_send_email(to_list, u"数据库变更审批", email_data, e_type="approve")
-
-            elif flow_type == 'config_deploy':
-                email_data = {
-                    "service": id_to_service(service),
-                    "team_name": id_to_team(team_name),
-                    "dev_user": id_to_user(dev_user),
-                    "test_user": id_to_user(test_user),
-                    "production_user": id_to_user(production_user),
-                    "current_version": current_version,
-                    "last_version": last_version,
-                    "sql_info": sql_info,
-                    "comment": comment,
-                    "create_time": create_time,
-                    "deploy_info": deploy_info,
-                    "config": config,
-                    "id": w_id,
-                }
-                async_send_email(to_list, u"配置变更审批", email_data, e_type="approve")
-
-            else:
-                pass
-
-            return response_json(200, '', 'ceate successful')
-        except Exception, e:
-            print e
-            return response_json(500, 'create failed', '')
     else:
         return ''
 
@@ -316,12 +310,16 @@ def approved():
         w_id = json_data['w_id']
         w = Workflow.select().where(Workflow.w == w_id).get()
         if approved == "access":
+            if int(w.status) != 1:
+                return response_json(301, '', u'工作流状态检测到已经被改变')
             w.status = int(w.status) + 1
             w.access_info = suggestion
             w.approved_user = uid
             w.save()
             return response_json(200, "", "")
         elif approved == "deny":
+            if int(w.status) != 1:
+                return response_json(301, '', u'工作流状态检测到已经被改变')
             w.status = 5
             w.approved_user = uid
             w.deny_info = suggestion
@@ -331,7 +329,7 @@ def approved():
         else:
             return response_json(500, u"审批参数无效", "")
     else:
-        return ""
+        return response_json(200, '', '')
 
 
 @workflow.route('/sure_deploy', methods=['POST', 'OPTION'])
@@ -345,6 +343,8 @@ def sure_deploy():
         uid = json_data['uid']
         w_id = json_data['w_id']
         w = Workflow.select().where(Workflow.w == w_id).get()
+        if int(w.status) != 2:
+            return response_json(301, '', u'工作流状态检测到已经被改变')
         w.status = int(w.status) + 1
         w.ops_user = uid
         try:
@@ -366,6 +366,8 @@ def sure_test():
         json_data = request.get_json()
         w_id = json_data['w_id']
         w = Workflow.select().where(Workflow.w == w_id).get()
+        if int(w.status) != 3:
+            return response_json(301, '', u'工作流状态检测到已经被改变')
         w.status = int(w.status) + 1
         w.close_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         try:

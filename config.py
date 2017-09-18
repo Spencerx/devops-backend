@@ -25,6 +25,8 @@ class Dev(Config):
         pass
     DEBUG = True
     secret_key = '5as7**%sd5^s7x)!'
+
+    # main database
     DATABASE = {
         'host': '192.168.132.229',
         'port': 3306,
@@ -32,6 +34,8 @@ class Dev(Config):
         'passwd': 'docker',
         'db': 'blog'
     }
+
+    # SQLAdvisor
     SQLADVISOR_DB = {
         'host': '42.62.97.87',
         'port': 3306,

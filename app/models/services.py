@@ -17,6 +17,7 @@ class Services(BaseModel):
     s = PrimaryKeyField(db_column='s_id')
     service_name = CharField()
     war_url = CharField(null=True)
+    current_version = CharField(null=True)
 
     class Meta:
         db_table = 'services'

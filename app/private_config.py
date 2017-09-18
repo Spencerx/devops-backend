@@ -2,4 +2,8 @@
 # -*- coding: utf-8 -*-
 
 
-wechat_sms_group = "wxpy"
+# email
+MAIL_HOST = 'smtp.exmail.qq.com'
+MAIL_PORT = '465'
+MAIL_ACCOUNT = 'security@haixue.com'
+MAIL_PASSWORD = ''

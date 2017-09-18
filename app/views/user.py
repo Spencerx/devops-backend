@@ -76,6 +76,7 @@ def user_list():
             us = Users.select().limit(int(per_size)).offset((int(page_count) - 1) * int(per_size)).order_by(Users.id.desc())
         data = []
         for u in us:
+            print u.create_time
             per_user = {
                 "uid": u.id,
                 "create_time": u.create_time.strftime('%Y-%m-%d %H:%M:%S'),

@@ -37,7 +37,7 @@ class Dev(Config):
 
     # SQLAdvisor
     SQLADVISOR_DB = {
-        'host': '42.62.97.87',
+        'host': '',
         'port': 3306,
         'user': 'techdb1',
         'password': 'techdb1#@!812!',

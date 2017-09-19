@@ -21,7 +21,7 @@ def id_to_team(id):
 def id_to_user(id):
     try:
         u = Users.select().where(Users.id == id).get()
-        return u.username
+        return u.name
     except Exception, e:
         return ""
 
@@ -83,8 +83,8 @@ def status_to_id(status):
 
 def service_to_id(service):
     try:
-        s = Services.select().where(Services.service_name == int(service)).get()
-        return s.id
+        s = Services.select().where(Services.service_name == service).get()
+        return s.s
     except Exception, e:
         return ""
 

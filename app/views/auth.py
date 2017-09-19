@@ -7,7 +7,7 @@
     因为end服务数据库的用户信息不完全符合运维系统。非首次登陆运维系统 只需要在end鉴权 然后在运维系统获取
     身份信息就行
 """
-
+import datetime
 from flask import Blueprint, request, current_app
 from app.tools.saltUtils import generate_salt_token,exec_commands
 from app.tools.tokenUtils import generate_token, check_token_status
@@ -53,16 +53,17 @@ def login():
                         'role': u.role,
                         'is_active': u.is_active,
                         'token': token,
-                        'uid': u.id
+                        'uid': u.id,
+                        'name': u.name
                     }
                     current_app.logger.info('user:{0} get token {1} success'.format(username, token))
                     return response_json(200, '', data=data)
                 else:
                     return response_json(500, u'请联系管理员激活账户', data='')
             else:
-                return response_json(500, u'第一次登陆需要联系管理员激活账户', data='')
+                return response_json(500, u'第一次登陆需要注册后账号激活后才能登陆', data='')
     else:
-        return ''
+        return response_json(200, '', '')
 
 
 @auth.route('/logout', methods=['POST'])
@@ -81,7 +82,7 @@ def logout():
         except Exception, e:
             return response_json(500, e, '')
     else:
-        return ''
+        return response_json(200, '', '')
 
 
 @auth.route('/register', methods=['POST'])
@@ -97,7 +98,8 @@ def register():
     password = json_data['password']
     role = json_data['role']
     email = json_data['email']
-    is_active = 2
+    create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    is_active = "0"
     is_exist = Users.select().where(Users.username == username).count()
     if is_exist > 0:
         return response_json(500, u'该账号已被注册', '')
@@ -108,12 +110,8 @@ def register():
         elif res['status'] == 200 and not res['result']:
             return response_json(500, u'密码错误', data='')
         else:
-            # 注册实用的用户名就是pinyin 所以放弃该字段 默认值就是username
-            # p = Pinyin()
-            # name_pinyin = p.get_pinyin(u"{0}".format(name), '')
-            # name_pinyin = username
-            u = Users(username=username, role=role, is_active=is_active,
-                      name_pinyin=username, email=email, name=name, can_approved=0)
+            u = Users(username=username, role=role, is_active=is_active, create_time=create_time,
+                      name_pinyin=username, email=email, name=name, can_approved="0")
             try:
                 u.save()
                 current_app.logger.info('user:{0} register success'.format(username))
@@ -134,7 +132,7 @@ def check_status():
         else:
             return response_json(500, '', '')
     else:
-        return ''
+        return response_json(200, '', '')
 
 
 @auth.route('/salt_token')

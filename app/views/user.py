@@ -34,9 +34,9 @@ def userinfo():
                         my_flow_count += Workflow.select().where(Workflow.status == 2).count()
 
                     if int(user_role) == 4:
-                        my_flow_count += Workflow.select().where((Workflow.status == 3) & (Workflow.test_user == uid)).count()
-
-                    if can_approved:
+                        my_flow_count += Workflow.select().where((Workflow.status == 3) &
+                                                                 (Workflow.test_user == uid)).count()
+                    if int(can_approved):
                         my_flow_count += Workflow.select().where(Workflow.status == 1).count()
 
                     data = {
@@ -46,7 +46,7 @@ def userinfo():
                         'myflow_count': my_flow_count,
                         'uid': u.id,
                         'token': token,
-                        'name_pinyin': u.name_pinyin if u.name_pinyin else '',
+                        'name': u.name if u.name else '',
                     }
                 except Exception, e:
                     return response_json(500, u'用户未找到', '')
@@ -76,7 +76,6 @@ def user_list():
             us = Users.select().limit(int(per_size)).offset((int(page_count) - 1) * int(per_size)).order_by(Users.id.desc())
         data = []
         for u in us:
-            print u.create_time
             per_user = {
                 "uid": u.id,
                 "create_time": u.create_time.strftime('%Y-%m-%d %H:%M:%S'),
@@ -120,6 +119,38 @@ def active_delete():
             return response_json(500, e, '')
     else:
         return response_json(200, "", "")
+
+
+@user.route("/modify", methods=["POST"])
+def modify():
+    """
+     修改用户接口
+    :return:
+    """
+    if request.method == "POST":
+        json_data = request.get_json()
+        uid = json_data['uid']
+        name = json_data['name']
+        email = json_data['email']
+        can_approved = json_data['can_approved']
+        role = json_data['role']
+        try:
+            u = Users.select().where(Users.id == int(uid)).get()
+            u.name = name
+            u.email = email
+            u.role = int(role)
+            u.can_approved = '1' if can_approved else '0'
+            u.save()
+            return response_json(200, '', 'update successful')
+        except Exception, e:
+            return response_json(500, e, '')
+
+
+
+
+
+
+
 
 
 

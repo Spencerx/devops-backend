@@ -5,7 +5,8 @@ import datetime
 from app.models.workflows import Workflow
 from app.models.users import Users
 from app.models.flow_type import FlowTyle
-from flask import Blueprint, request, current_app
+from app.models.services import Services
+from flask import Blueprint, request
 from app.tools.jsonUtils import response_json
 from app.tools.ormUtils import id_to_user, id_to_service, id_to_team, id_to_status, id_to_flow_type, service_to_id
 from app.tools.commonUtils import async_send_email
@@ -116,7 +117,7 @@ def create_workflow():
         form_data = request.get_json()
         flow_type = form_data['flow_type']
         utc_format = "%Y-%m-%dT%H:%M:%S.%fZ"
-        approved_users = Users.select().where(Users.can_approved == 1)
+        approved_users = Users.select().where(Users.can_approved == '1')
         to_list = [approved_user.email for approved_user in approved_users]
         # 判断工作流类型 来区分处理逻辑
         # 系统上线
@@ -247,7 +248,7 @@ def my_flow():
         uid = req_data['uid']
         u = Users.select().where(Users.id == uid).get()
         user_role = u.role
-        can_approved = u.can_approved
+        can_approved = int(u.can_approved)
         workflow_list = []
         if int(user_role) == 2:
             flows = Workflow.select().where(Workflow.status == 2)
@@ -265,7 +266,7 @@ def my_flow():
                 workflow_list.append(flow.w)
 
         if not workflow_list:
-            return response_json(200, "", [])
+            return response_json(200, "", {'data': [], 'count': 0})
         else:
             flow_data = []
             for flow_id in workflow_list:
@@ -343,12 +344,15 @@ def sure_deploy():
         uid = json_data['uid']
         w_id = json_data['w_id']
         w = Workflow.select().where(Workflow.w == w_id).get()
+        s = Services.select().where(Services.s == int(w.service)).get()
         if int(w.status) != 2:
             return response_json(301, '', u'工作流状态检测到已经被改变')
+        s.current_version = w.current_version  # 修改该服务的最新版本为当前上线版本
         w.status = int(w.status) + 1
         w.ops_user = uid
         try:
             w.save()
+            s.save()
             return response_json(200, '', '')
         except Exception, e:
             return response_json(500, e, '')

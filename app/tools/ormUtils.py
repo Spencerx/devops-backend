@@ -59,7 +59,7 @@ def id_to_role(id):
 
 def user_to_id(user):
     try:
-        u = Users.select().where(Users.username == user).get()
+        u = Users.select().where(Users.name == user).get()
         return u.id
     except Exception, e:
         return ""

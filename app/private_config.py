@@ -6,4 +6,4 @@
 MAIL_HOST = 'smtp.exmail.qq.com'
 MAIL_PORT = '465'
 MAIL_ACCOUNT = 'security@haixue.com'
-MAIL_PASSWORD = ''
+MAIL_PASSWORD = 'Haixue20170906'

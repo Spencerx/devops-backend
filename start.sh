@@ -1,3 +1,6 @@
+echo "install requirment"
+pip install -r dependance
+
 echo "start up ..."
 echo  "
              ▄▄▄▄▄
@@ -26,4 +29,5 @@ echo  "
     /  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ ▀
                   ██
       "
+
 gunicorn -b 0.0.0.0:8888 -w 12 -k gevent devops:app

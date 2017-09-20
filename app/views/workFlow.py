@@ -8,7 +8,7 @@ from app.models.flow_type import FlowTyle
 from app.models.services import Services
 from flask import Blueprint, request
 from app.tools.jsonUtils import response_json
-from app.tools.ormUtils import id_to_user, id_to_service, id_to_team, id_to_status, id_to_flow_type, service_to_id
+from app.tools.ormUtils import id_to_user, id_to_service, id_to_team, id_to_status, id_to_flow_type, service_to_id, querylastversion_by_id
 from app.tools.commonUtils import async_send_email
 
 
@@ -35,6 +35,8 @@ def history():
             per_flow = {
                 'ID': workflow.w,
                 'create_time': workflow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
+                'deploy_start_time': workflow.deploy_start_time.strftime('%Y-%m-%d %H:%M:%M') if workflow.deploy_start_time else '',
+                'deploy_end_time': workflow.deploy_end_time.strftime('%Y-%m-%d %H:%M:%M') if workflow.deploy_end_time else '',
                 'close_time': workflow.close_time.strftime('%Y-%m-%d %H:%M:%M') if workflow.close_time else '',
                 'team_name': id_to_team(workflow.team_name),
                 'dev_user': id_to_user(workflow.dev_user),
@@ -44,7 +46,7 @@ def history():
                 'production_user': id_to_user(workflow.production_user),
                 'flow_type': id_to_flow_type(workflow.type),
                 'current_version': workflow.current_version,
-                'last_version': workflow.last_version,
+                'last_version': querylastversion_by_id(workflow.service),
                 'comment': workflow.comment,
                 'deploy_info': workflow.deploy_info,
                 'status': workflow.status,
@@ -132,6 +134,10 @@ def create_workflow():
             create_user = form_data['create_user']
             production_user = int(form_data['production_user'])
             sql_info = form_data['sql_info']
+            deploy_start_time = datetime.datetime.strptime(form_data['deploy_time'][0], utc_format). \
+                strftime('%Y-%m-%d %H:%M:%S')
+            deploy_end_time = datetime.datetime.strptime(form_data['deploy_time'][1], utc_format). \
+                strftime('%Y-%m-%d %H:%M:%S')
             comment = form_data['comment']
             deploy_info = form_data['deploy_info']
             config = form_data['config']
@@ -143,8 +149,8 @@ def create_workflow():
                 mail_versions = mail_versions + version + " "
                 w = Workflow(service=service_to_id(service_name), create_time=create_time,
                              dev_user=dev_user, test_user=test_user, production_user=production_user,
-                             current_version=version, type=flow_type,
-                             sql_info=sql_info, team_name=team_name, comment=comment,
+                             current_version=version, type=flow_type, deploy_start_time=deploy_start_time,
+                             sql_info=sql_info, team_name=team_name, comment=comment, deploy_end_time=deploy_end_time,
                              deploy_info=deploy_info, config=config, create_user=create_user)
                 w.save()
                 w_id = w.w

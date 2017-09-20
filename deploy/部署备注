@@ -6,3 +6,7 @@ gunicorn -w 4 -b 127.0.0.1:8888 -k gevent devops:app
 docker run --name devops-nginx -v /Users/sunqilin/projects/devops/devops-nginx/nginx.conf:/etc/nginx/nginx.conf:ro -v /Users/sunqilin/projects/devops/devops-frontend/dist:/var/www/  -p 9090:80 -d daocloud.io/nginx
 ##mysql
 ##redis
+
+
+#setup
+newrelic-admin run-program gunicorn -b 0.0.0.0:8888 -w 4 -k gevent  --access-logfile devops_access.log --error-logfile devops_error.log  devops:app

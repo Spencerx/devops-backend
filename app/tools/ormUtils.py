@@ -105,6 +105,12 @@ def role_to_id(role):
         return ""
 
 
-
-
-
+def querylastversion_by_id(id):
+    try:
+        if id:
+            s = Services.select().where(Services.s == int(id)).get()
+            return s.current_version
+        else:
+            return ""
+    except Exception, e:
+        return ""

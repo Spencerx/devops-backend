@@ -1,29 +1,39 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import yagmail
-import threading
-from app.private_config import MAIL_ACCOUNT, MAIL_HOST, MAIL_PASSWORD, MAIL_PORT
+from app.private_config import MAIL_ACCOUNT, MAIL_HOST, MAIL_PASSWORD
 from gevent import monkey
+import gevent
+from email.mime.text import MIMEText
+from email.utils import formatdate
+from smtplib import SMTP
 monkey.patch_all()
 
 
-def send_email(to_list, subject, content):
+def send_mail(to, subject, content):
     """
-    发送邮件接口
-    :param to_list: 邮件接收人 列表类型
-    :param subject: 邮件主题
-    :param content: 邮件主题正文
-    :return:
-    """
-    yag = yagmail.SMTP(user=MAIL_ACCOUNT, password=MAIL_PASSWORD,
-                       host=MAIL_HOST, port=MAIL_PORT)
-    yag.send(to=to_list, subject=subject, contents=content)
+       发送邮件接口
+       :param to: 邮件接收人
+       :param subject: 邮件主题
+       :param content: 邮件主题正文
+       :return:
+       """
+    msg = MIMEText(content, _subtype='html', _charset='utf-8')
+    msg['To'] = to
+    msg['From'] = MAIL_ACCOUNT
+    msg['Subject'] = subject
+    msg['Date'] = formatdate(localtime=1)
+    smtp_server = MAIL_HOST
+    # msg['Message-id'] = make_msgid() msg id
+    smtp = SMTP(smtp_server)
+    smtp.login(MAIL_ACCOUNT, MAIL_PASSWORD)
+    smtp.sendmail(msg['From'], msg['To'], msg.as_string())
+    smtp.quit()
 
 
 def async_send_email(to_list, subject, data, e_type):
     """
-    新建线程 发送邮件
+    gevent协程异步发送邮件
     :param to_list:
     :param subject:
     :param data:
@@ -139,7 +149,7 @@ def async_send_email(to_list, subject, data, e_type):
 
           <tr>
             <td style="background-color: #56b6c2">发布时间</td>
-            <td style="background-color: grey">{4}-{5}</td>
+            <td style="background-color: grey">{4} - {5}</td>
           </tr>
 
           <tr>
@@ -158,8 +168,102 @@ def async_send_email(to_list, subject, data, e_type):
                 """.format(data["id"], data['create_time'], data["team_name"], data["test_user"],
                            data["deploy_start_time"], data["deploy_end_time"], data["sql_info"], data["comment"])
 
-    thr = threading.Thread(target=send_email, args=[to_list, subject, html])  # 创建线程
-    thr.start()
+    task_list = []
+    for to in to_list:
+        task_list.append(gevent.spawn(send_mail, to, subject, html),)
+    gevent.joinall(task_list)
+
+
+
+
+
+html = """
+     <table style="width: 550px"  border="1" cellpadding="13" cellspacing="1">
+    <caption>
+    请到运维平台完成审批
+    </caption>
+    <tr>
+      <th style="background-color: lightgrey">工作流ID</th>
+      <td>{0}</td>
+    </tr>
+
+    <tr>
+      <th style="background-color: lightgrey">创建时间</th>
+      <td>{1}</td>
+    </tr>
+
+    <tr>
+      <th>团队</th>
+      <td>{2}</td>
+    </tr>
+
+    <tr>
+      <th>测试负责人</th>
+      <td>{3}</td>
+    </tr>
+
+    <tr>
+      <th>发布时间</th>
+      <td>{4}-{5}</td>
+    </tr>
+
+    <tr>
+      <th>SQL</th>
+      <td>{6}</td>
+    </tr>
+
+    <tr>
+      <th>备注</th>
+      <td>{7}</td>
+    </tr>
+  </table>
+<a href="http://www.baidu.com">hellos</a>
+"""
+
+html = """
+         <table style="width: 550px"  border="1" cellpadding="13" cellspacing="1">
+        <caption>
+        请到运维平台完成审批
+        </caption>
+        <tr>
+          <th style="background-color: lightgrey">工作流ID</th>
+          <td>{0}</td>
+        </tr>
+
+        <tr>
+          <th style="background-color: lightgrey">创建时间</th>
+          <td>{1}</td>
+        </tr>
+
+        <tr>
+          <th>团队</th>
+          <td>{2}</td>
+        </tr>
+
+        <tr>
+          <th>测试负责人</th>
+          <td>{3}</td>
+        </tr>
+
+        <tr>
+          <th>发布时间</th>
+          <td>{4}-{5}</td>
+        </tr>
+
+        <tr>
+          <th>SQL</th>
+          <td>{6}</td>
+        </tr>
+
+        <tr>
+          <th>备注</th>
+          <td>{7}</td>
+        </tr>
+      </table>
+    <hr>
+    <a href="http://www.baidu.com">一键完成审批</a>
+    """
+
 
 
 

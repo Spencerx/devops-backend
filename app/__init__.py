@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from flask import Flask
-from config import Config
 from jinja2.utils import import_string
 import os, logging, commands
 from flask_cors import CORS
+from app.models.users import U
 
 blueprints = [
     ('app.views.auth:auth', '/api/v1/auth'),
@@ -48,7 +48,6 @@ def load_ext(app):
     # login_manager.session_protection = 'strong'
     # login_manager.login_view='auth.login'
     # login_manager.init_app(app)
-    pass
 
 
 def register_blueprints(app):

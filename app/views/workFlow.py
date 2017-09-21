@@ -8,9 +8,11 @@ from app.models.flow_type import FlowTyle
 from app.models.services import Services
 from flask import Blueprint, request
 from app.tools.jsonUtils import response_json
+from app.tools.redisUtils import create_redis_connection
 from app.tools.ormUtils import id_to_user, id_to_service, id_to_team, id_to_status, id_to_flow_type, service_to_id, querylastversion_by_id
 from app.tools.commonUtils import async_send_email
-
+import gevent.monkey
+gevent.monkey.patch_all()
 
 workflow = Blueprint('workflow', __name__)
 
@@ -120,7 +122,7 @@ def create_workflow():
         flow_type = form_data['flow_type']
         utc_format = "%Y-%m-%dT%H:%M:%S.%fZ"
         approved_users = Users.select().where(Users.can_approved == '1')
-        to_list = [approved_user.email for approved_user in approved_users]
+        to_list = [[approved_user.id, approved_user.email] for approved_user in approved_users]
         # 判断工作流类型 来区分处理逻辑
         # 系统上线
         if flow_type == 1:
@@ -154,13 +156,14 @@ def create_workflow():
                              deploy_info=deploy_info, config=config, create_user=create_user)
                 w.save()
                 w_id = w.w
-                mail_ids = mail_ids + str(w_id) + " "
+                mail_ids = mail_ids + str(w_id) + " "  # 批量审批工作流的id字符串拼接值
             email_data = {
                 "service": mail_services,
                 "version": mail_versions,
                 "team_name": id_to_team(team_name),
                 "dev_user": id_to_user(dev_user),
                 "test_user": id_to_user(test_user),
+                "create_user": create_user,
                 "production_user": id_to_user(production_user),
                 "sql_info": sql_info,
                 "comment": comment,
@@ -169,7 +172,9 @@ def create_workflow():
                 "config": config,
                 "id": mail_ids,
             }
-            async_send_email(to_list, u"上线审批", email_data, e_type=flow_type)
+            r = create_redis_connection()
+            r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u'上线审批',
+                                            'data': email_data, 'e_type': flow_type})
             return response_json(200, '', 'ceate successful')
 
         # 数据库变更

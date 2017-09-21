@@ -20,29 +20,11 @@
 #    if i.can_approved:
 #     print i.can_approved
 # 导入模块
-import datetime
-import gevent
-from gevent import monkey
-monkey.patch_all()
 
+users = [
+    {'name': 'a', 'age': 1},
+    {'name': 'b', 'age': 2},
+    {'name': 'c', 'age': 3},
+]
 
-def f(n):
-    for i in range(n):
-        gevent.sleep(1)
-        print i
-start = datetime.datetime.now()
-f(5)
-f(3)
-f(2)
-end = datetime.datetime.now()
-print end - start
-
-start = datetime.datetime.now()
-g1 = gevent.spawn(f,5)
-g2 = gevent.spawn(f,3)
-g3 = gevent.spawn(f,2)
-gevent.joinall([g1, g2, g3])
-end = datetime.datetime.now()
-print end-start
-
-
+print [[i['name'], i['age']] for i in users]

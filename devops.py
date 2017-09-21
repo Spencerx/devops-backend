@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from flask import request
+from flask import request, abort
 from app import create_app
+from app.tools.tokenUtils import decrypt_token, check_token_status
 app = create_app()
 
 
@@ -12,6 +13,7 @@ app = create_app()
 #                 datefmt='%a, %d %b %Y %H:%M:%S',
 #                 filename='{0}/production.log'.format(Config.LOG_DIR),
 #                 filemode='a+')
+
 @app.before_request
 def before_request():
     if request.method != 'OPTIONS':
@@ -19,37 +21,28 @@ def before_request():
         if current_uri.startswith("/api/v1/common") or current_uri.startswith("/api/v1/auth/login") \
                 or current_uri.startswith("/api/v1/auth/logout"):
             pass
-            # print 'pass'
         else:
             authorization = request.headers.get('Authorization', None)
             if authorization:
-                pass
-                # print authorization
+                username = decrypt_token(authorization)
+                if username:
+                    if check_token_status(username, authorization):
+                        pass
+                    else:
+                        abort(401, 'token is expired')
+                else:
+                    abort(401, 'token is invalidate')
             else:
-                pass
-                # abort(401)
+                abort(401, 'no token in header')
 
     else:
         pass
-    # if 'auth/login' in current_uri or 'auth/register' in current_uri:
-    #     pass
-    # else:
-    #     authentication = request.headers.get('Token',None)
-    #     if authentication:
-    #         token_status = check_token_status(authentication)
-    #         if token_status:
-    #             print 'validate token'
-    #         else:
-    #             print 'invalidate token'
-    #     else:
-    #         pass
-    #         print 'deny!'
 
 
-# @app.after_request
-# def after_request(response):
-#     print 'end request!'
-#     return response
+@app.after_request
+def after_request(response):
+    return response
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8888, threaded=True)

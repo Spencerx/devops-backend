@@ -5,7 +5,6 @@ from flask import Flask
 from jinja2.utils import import_string
 import os, logging, commands
 from flask_cors import CORS
-from app.models.users import U
 
 blueprints = [
     ('app.views.auth:auth', '/api/v1/auth'),
@@ -51,6 +50,11 @@ def load_ext(app):
 
 
 def register_blueprints(app):
+    """
+    tips: 批量注册蓝图
+    :param app:
+    :return:
+    """
     for bp_info in blueprints:
         bp = import_string(bp_info[0])
         app.register_blueprint(bp, url_prefix=bp_info[1])

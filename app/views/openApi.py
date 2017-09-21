@@ -5,12 +5,14 @@ openapi中的接口不需要鉴权 主要提供给外部系统访问
 """
 import paramiko
 import sys
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, jsonify, request, current_app, abort
 from app.models.teams import Teams
+from app.models.workflows import Workflow
 from app.models.services import Services
 from app.models.users import Users
 from app.models.roles import Roles
 from app.tools.jsonUtils import response_json
+from app.tools.commonUtils import decrypt_email_token
 
 common = Blueprint('common',__name__)
 reload(sys)
@@ -168,3 +170,49 @@ def roles_list():
         return response_json(200, '', data)
     except Exception, e:
         return response_json(500, e, '')
+
+
+@common.route('/confirm')
+def confirm():
+    """
+    邮件一键完成审批接口
+    :return:
+    """
+    token = request.args.get('token')
+    if token:
+        data = decrypt_email_token(token)
+        if data:
+            uid = int(data['uid'])
+            # 这里的工作流id可能不止一直 设计到多个flow的同时审批
+            wids = str(data['w_id']).strip().split(" ")
+            data = []
+            for wid in wids:
+                try:
+                    w = Workflow.select().where(Workflow.w == int(wid)).get()
+                except Exception, e:
+                    data.append({"id": wid, "result": u'审批过程中检测到工作流已被删除'})
+                    continue
+                if int(w.status) != 1:
+                    data.append({"id": wid, "result": u'审批过程中检测到工作流状态已改变'})
+                else:
+                    w.status = int(w.status) + 1
+                    w.access_info = u'邮件一键快速审批'
+                    w.approved_user = uid
+                    w.save()
+                    data.append({'id': wid, "result": u'审批成功'})
+            html_header = u"<table><tr><th>工作流ID</th><th>快速审批结果</th></tr>"
+            html_footer = u"</table>"
+            html_body = ""
+            for res in data:
+                row = "<font color=\"green\">{0}</font>".format(res['result']) if u"成功" in res['result']\
+                            else "<font color=\"red\">{0}</font>".format(res['result'])
+
+                html_body = html_body + "<tr><td>" + res['id'] + "</td>" + \
+                                        "<td>" + row + "</td></tr>"
+            html = html_header + html_body + html_footer
+            return html
+        else:
+            abort(403, u'非法的token')
+    else:
+        abort(404, u'没有token')
+

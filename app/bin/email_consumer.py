@@ -23,15 +23,19 @@ def create_redis_connection():
 
 
 def consume_email():
-    r = create_redis_connection()
-    task = r.brpop('email:consume:tasks', 0)
-    task = eval(task[1])
-    to_list = task['to_list']
-    subject = task['subject']
-    data = task['data']
-    e_type = task['e_type']
-    logging.info("to:{0} subject:{1}".format(str(to_list), subject))
-    async_send_email(to_list, subject, data, e_type)
+    try:
+        r = create_redis_connection()
+        task = r.brpop('email:consume:tasks', 0)
+    except Exception, e:
+        logging.error("email task queue redis has error message:".format(e.message))
+    else:
+        task = eval(task[1])
+        to_list = task['to_list']
+        subject = task['subject']
+        data = task['data']
+        e_type = task['e_type']
+        logging.info("to:{0} subject:{1}".format(str(to_list), subject))
+        async_send_email(to_list, subject, data, e_type)
 
 
 while True:

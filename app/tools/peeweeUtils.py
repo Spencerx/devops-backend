@@ -1,13 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from peewee import *
+from app.private_config import DATABASE, PASSPORT_DATABASE
 
 
 def create_peewee_connection():
-    database = MySQLDatabase('devops', **{'host': '127.0.0.1', 'password': 'admin', 'port': 3306, 'user': 'root'})
+    database = MySQLDatabase(DATABASE['db'], **{'host': DATABASE['host'], 'password': DATABASE['passwd'],
+                                                'port': DATABASE['port'], 'user': DATABASE['user']})
     return database
 
 
 def create_passport_connection():
-    database = MySQLDatabase('highso_db1', **{'host': '127.0.0.1', 'password': 'admin', 'port': 3306, 'user': 'root'})
+    database = MySQLDatabase(PASSPORT_DATABASE['db'], **{'host': PASSPORT_DATABASE['host'],
+                                                         'password': PASSPORT_DATABASE['passwd'],
+                                                         'port': PASSPORT_DATABASE['port'],
+                                                         'user': PASSPORT_DATABASE['user']})
     return database

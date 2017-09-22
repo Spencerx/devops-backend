@@ -64,8 +64,8 @@ def login():
                         return response_json(200, '', data=data)
                     new_token = generate_token(username)
                     # 登陆页面点击记住密码token缓存10天 否则缓存24小时
-                    r.setex(username, token, 24 * 60 * 60 * 10) if remember_me \
-                        else r.setex(username, token, 24 * 60 * 60 * 1)
+                    r.setex(username, new_token, 24 * 60 * 60 * 10) if remember_me \
+                        else r.setex(username, new_token, 24 * 60 * 60 * 1)
                     data = {
                         'username': username,
                         'role': u.role,

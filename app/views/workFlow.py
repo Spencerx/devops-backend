@@ -309,7 +309,7 @@ def my_flow():
 
 
 @workflow.route('/approved', methods=['POST', 'OPTION'])
-def approved():
+def approved_flow():
     """
     工作流审批接口
     :return:
@@ -326,7 +326,7 @@ def approved():
                 return response_json(301, '', u'工作流状态检测到已经被改变')
             w.status = int(w.status) + 1
             w.access_info = suggestion
-            w.approved_user = uid
+            w.approved_user = int(uid)
             w.save()
             return response_json(200, "", "")
         elif approved == "deny":

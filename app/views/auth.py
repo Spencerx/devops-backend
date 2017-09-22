@@ -33,11 +33,14 @@ def login():
         form_data = request.get_json()
         username = form_data['username']
         password = form_data['password']
+        remember_me = form_data['remember']
         # 在end服务中验证账户密码
         res = varify_passwd(username, password)
         if res['status'] == 500:
+            current_app.logger.warn('user {0} not exsist'.format(username))
             return response_json(500, u'用户不存在', data='')
         elif res['status'] == 200 and not res['result']:
+            current_app.logger.warn('user {0} password is no correct'.format(username))
             return response_json(500, u'密码错误', data='')
         else:
             is_register = Users.select().where(Users.username == username).count()
@@ -46,21 +49,40 @@ def login():
                 u = Users.select().where(Users.username == username).get()
                 if int(u.is_active) == 1:
                     r = create_redis_connection()
-                    token = generate_token(username)
-                    r.setex(username, token, 24 * 60 * 60 * 30)
+                    token_in_redis = r.get(username)
+                    # 通过redis是否存在token来判断是否重新生成token 实现同一个账户多端登陆 如果每次都生成token会导致多客户端登陆挤掉上次的客户端
+                    if token_in_redis:
+                        data = {
+                            'username': username,
+                            'role': u.role,
+                            'is_active': u.is_active,
+                            'token': token_in_redis,
+                            'uid': u.id,
+                            'name': u.name
+                        }
+                        current_app.logger.info('user {0} get token in redis success'.format(username))
+                        return response_json(200, '', data=data)
+                    new_token = generate_token(username)
+                    # 登陆页面点击记住密码token缓存10天 否则缓存24小时
+                    r.setex(username, token, 24 * 60 * 60 * 10) if remember_me \
+                        else r.setex(username, token, 24 * 60 * 60 * 1)
                     data = {
                         'username': username,
                         'role': u.role,
                         'is_active': u.is_active,
-                        'token': token,
+                        'token': new_token,
                         'uid': u.id,
                         'name': u.name
                     }
-                    current_app.logger.info('user:{0} get token {1} success'.format(username, token))
+                    current_app.logger.info('user {0} generate new token {1} success'.format(username, new_token))
                     return response_json(200, '', data=data)
                 else:
+                    current_app.logger.warn('user {0} try to login but account is not actived'.
+                                            format(username))
                     return response_json(500, u'请联系管理员激活账户', data='')
             else:
+                current_app.logger.warn('user {0} try to login but account is not registed'.
+                                        format(username))
                 return response_json(500, u'第一次登陆需要注册后账号激活后才能登陆', data='')
     else:
         return response_json(200, '', '')
@@ -77,9 +99,10 @@ def logout():
         username = request.get_json()['username']
         try:
             r.delete(username)
-            current_app.logger.info('user:{0} has safely logout'.format(username))
+            current_app.logger.info('user {0} has safely logout'.format(username))
             return response_json(200, '', '')
         except Exception, e:
+            current_app.logger.error('redis delete token of user {0} failed, message:{1}'.format(username, e.message))
             return response_json(500, e, '')
     else:
         return response_json(200, '', '')
@@ -93,7 +116,7 @@ def register():
     """
     json_data = request.get_json()
     username = json_data['username']
-    # Chiness Name
+    # 中文名
     name = json_data['name']
     password = json_data['password']
     role = json_data['role']
@@ -102,31 +125,42 @@ def register():
     is_active = "0"
     is_exist = Users.select().where(Users.username == username).count()
     if is_exist > 0:
+        current_app.logger.warn('user {0} has been reegisted'.format(username))
         return response_json(500, u'该账号已被注册', '')
     else:
         res = varify_passwd(username, password)
         if res['status'] == 500:
+            current_app.logger.warn('user {0} try to regist but account is not exsist'.format(username))
             return response_json(500, u'用户不存在', data='')
         elif res['status'] == 200 and not res['result']:
+            current_app.logger.info('user {0} try to regist but password is wrong'.format(username))
             return response_json(500, u'密码错误', data='')
         else:
             u = Users(username=username, role=role, is_active=is_active, create_time=create_time,
                       name_pinyin=username, email=email, name=name, can_approved="0")
             try:
                 u.save()
-                current_app.logger.info('user:{0} register success'.format(username))
+                current_app.logger.info('user {0} register success'.format(username))
                 return response_json(200, '', '')
             except Exception, e:
-                current_app.logger.info('user:{0} register faild,exception:{1}'.format(username, 1))
+                current_app.logger.error('user {0} register faild,message:{1}'.format(username, e.message))
                 return response_json(500, e, '')
 
 
 @auth.route('/token_status', methods=['POST'])
 def check_status():
+    """
+    前端的路由钩子验证token接口
+    :return:
+    """
     if request.method == "POST":
-        token = request.headers.get('Authorization', None)
+        token_in_header = request.headers.get('Authorization', None)
         username = request.get_json()['username']
-        t = check_token_status(username, token)
+        try:
+            t = check_token_status(username, token_in_header)
+        except Exception, e:
+            current_app.logger.error("api passport in redis has error,message:{0}".format(e.message))
+            return response_json(500, e.message, '')
         if t:
             return response_json(200, '', '')
         else:
@@ -137,10 +171,13 @@ def check_status():
 
 @auth.route('/salt_token')
 def token():
-    token = generate_salt_token()
-    if token:
-        print token
-        res = exec_commands(token, 'w')
+    """
+    获取saltstatck token接口
+    todo
+    :return:
+    """
+    salt_token = generate_salt_token()
+    if salt_token:
+        print salt_token
+        res = exec_commands(salt_token, 'w')
         return str(res['return'])
-
-

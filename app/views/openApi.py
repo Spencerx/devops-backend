@@ -36,7 +36,8 @@ def team_list():
             data.append(per_team)
         return jsonify(data)
     except Exception, e:
-        return ''
+        current_app.logger.error("open api get all team has error message:{0}".format(e.message))
+        return response_json(500, e.message, '')
 
 
 @common.route('/service')
@@ -56,7 +57,8 @@ def service_list():
             data.append(per_service)
         return jsonify(data)
     except Exception, e:
-        return ''
+        current_app.logger.error("open api get all service has error message:{0}".format(e.message))
+        return response_json(500, e.message, '')
 
 
 @common.route('/user')
@@ -77,7 +79,8 @@ def user_list():
             data.append(per_user)
         return response_json(200, '', data=data)
     except Exception, e:
-        return ''
+        current_app.logger.error("open api get all registed users has error message:{0}".format(e.message))
+        return response_json(500, e.message, '')
 
 
 @common.route('/dev')
@@ -97,10 +100,11 @@ def dev_list():
             data.append(per_user)
         return jsonify(data)
     except Exception, e:
-        return ''
+        current_app.logger.error("open api get all develop users has error message:{0}".format(e.message))
+        return response_json(500, e.message, '')
 
 
-@common.route('/pinyin_trans',methods=['POST', 'OPTIONS'])
+@common.route('/pinyin_trans', methods=['POST', 'OPTIONS'])
 def pinyin_trans():
     """
     用户名的拼音转用户名 exp:sunqilin=>孙麒麟
@@ -116,7 +120,8 @@ def pinyin_trans():
             else:
                 return response_json(500, 'not find', '')
         except Exception, e:
-            return response_json(500, u'我好像故障了', '')
+            current_app.logger.error("open api translate Chiness to pinyin has error message:{0}".format(e.message))
+            return response_json(500, e.message, '')
     else:
         return ""
 
@@ -169,7 +174,8 @@ def roles_list():
             data.append(per_role)
         return response_json(200, '', data)
     except Exception, e:
-        return response_json(500, e, '')
+        current_app.logger.error("open api get all roles has error message:{0}".format(e.message))
+        return response_json(500, e.message, '')
 
 
 @common.route('/confirm')
@@ -190,15 +196,19 @@ def confirm():
                 try:
                     w = Workflow.select().where(Workflow.w == int(wid)).get()
                 except Exception, e:
+                    current_app.logger.warn("open api of approve checked flow has been deleted message:{0}".
+                                            format(e.message))
                     data.append({"id": wid, "result": u'审批过程中检测到工作流已被删除'})
                     continue
                 if int(w.status) != 1:
+                    current_app.logger.warn("open api of approve checked flow has been changed")
                     data.append({"id": wid, "result": u'审批过程中检测到工作流状态已改变'})
                 else:
                     w.status = int(w.status) + 1
                     w.access_info = u'邮件一键快速审批'
                     w.approved_user = uid
                     w.save()
+                    current_app.logger.info("one key approve flow {0} success".format(str(wid)))
                     data.append({'id': wid, "result": u'审批成功'})
             html_header = u"<table><tr><th>工作流ID</th><th>快速审批结果</th></tr>"
             html_footer = u"</table>"
@@ -212,7 +222,9 @@ def confirm():
             html = html_header + html_body + html_footer
             return html
         else:
+            current_app.logger.warn("one key approve api check token {0} is invalidate ".format(token))
             abort(403, u'非法的token')
     else:
+        current_app.logger.warn("one key approve api check token is null ")
         abort(404, u'没有token')
 

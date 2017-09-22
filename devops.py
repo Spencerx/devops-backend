@@ -1,18 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 from flask import request, abort
 from app import create_app
+from config import Dev
 from app.tools.tokenUtils import decrypt_token, check_token_status
 app = create_app()
 
-
-# 全局访问日志
-# logging.basicConfig(level=logging.DEBUG,
-#                 format='%(asctime)s %(levelname)s %(message)s',
-#                 datefmt='%a, %d %b %Y %H:%M:%S',
-#                 filename='{0}/production.log'.format(Config.LOG_DIR),
-#                 filemode='a+')
 
 @app.before_request
 def before_request():
@@ -29,8 +22,10 @@ def before_request():
                     if check_token_status(username, authorization):
                         pass
                     else:
+                        app.logger.error('token is expired')
                         abort(401, 'token is expired')
                 else:
+                    app.logger.error('token is invalidate')
                     abort(401, 'token is invalidate')
             else:
                 abort(401, 'no token in header')
@@ -45,4 +40,4 @@ def after_request(response):
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8888, threaded=True)
+    app.run(host=Dev.DEVOPS['IP'], port=Dev.DEVOPS['PORT'], threaded=True)

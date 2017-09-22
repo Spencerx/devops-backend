@@ -54,8 +54,41 @@ class Dev(Config):
     REDIS_URL = '127.0.0.1'
     REDIS_PORT = 6379
 
+    # devops start up server ip and port
+    DEVOPS = {
+        "IP": "0.0.0.0",
+        "PORT": 8888,
+    }
+
 
 class Prod(Config):
     def __init__(self):
         pass
-    pass
+
+    DEBUG = True
+    secret_key = '5as7**%sd5^s7x)!'
+
+    # SQLAdvisor
+    SQLADVISOR_DB = {
+        'host': '42.62.97.',
+        'port': 3306,
+        'user': 'techdb1',
+        'password': 'techdb1#@!812!',
+    }
+
+    # salt api
+    SALT_BASE_URL = 'https://192.168.234.132:8000'
+    SALT_LOGIN_URL = 'https://192.168.234.132:8000/login'
+    SALT_USERNAME = 'saltapi'
+    SALT_PASSWORD = 'admin'
+    SALT_EAUTH = 'pam'
+
+    # redis
+    REDIS_URL = '127.0.0.1'
+    REDIS_PORT = 6379
+
+    # devops start up server ip and port
+    DEVOPS = {
+        "IP": "0.0.0.0",
+        "PORT": 8888,
+    }

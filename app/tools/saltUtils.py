@@ -9,6 +9,10 @@ requests.packages.urllib3.disable_warnings()
 
 
 def generate_salt_token():
+    """
+    获取saltstack token
+    :return:
+    """
     url = current_app.config['SALT_LOGIN_URL']
     headers = {'Accept': 'application/json'}
     login_payload = {'username': current_app.config['SALT_USERNAME'], 'password': current_app.config['SALT_PASSWORD'],
@@ -24,6 +28,12 @@ def generate_salt_token():
 
 
 def exec_commands(token, cmd):
+    """
+    salt执行命令范例
+    :param token:
+    :param cmd:
+    :return:
+    """
     url = current_app.config['SALT_BASE_URL']
     headers = {'Accept': 'application/json', "X-Auth-Token": token}
     exec_playload = {'client': 'local', 'tgt': '*', 'fun': 'cmd.run', 'arg': cmd}

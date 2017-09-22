@@ -10,3 +10,6 @@ docker run --name devops-nginx -v /Users/sunqilin/projects/devops/devops-nginx/n
 
 #setup
 newrelic-admin run-program gunicorn -b 0.0.0.0:8888 -w 4 -k gevent  --access-logfile devops_access.log --error-logfile devops_error.log  devops:app
+
+#generate models
+python -m pwiz -e mysql -H 127.0.0.1 -p3306 -uroot -P  devops > db.py

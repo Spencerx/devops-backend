@@ -170,9 +170,6 @@ def async_send_email(to_list, subject, data, e_type):
                 """.format(data["id"], data['create_time'], data["team_name"], data["test_user"],
                            data["deploy_start_time"], data["deploy_end_time"], data["sql_info"], data["comment"])
 
-    #for to in to_list:
-     #   send_mail(to, subject, html)
-
         send_mail(to[1], subject, html)
 
 

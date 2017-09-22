@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# python -m pwiz -e mysql -H 127.0.0.1 -p3306 -uroot -P  devops > db.py
-from app.tools.peeweeUtils import create_peewee_connection
 
+from app.tools.peeweeUtils import create_peewee_connection
 from peewee import *
 
 

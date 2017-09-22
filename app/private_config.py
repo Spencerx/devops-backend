@@ -21,3 +21,22 @@ TASK_QUEUE = {
 
 # email confirm url prefix
 EMAIL_CONFIRM_PREFIX = 'http://127.0.0.1:8888/api/v1/common/confirm'
+
+# peewee config
+# devops数据库
+DATABASE = {
+    'host': '127.0.0.1',
+    'port': 3306,
+    'user': 'root',
+    'passwd': 'admin',
+    'db': 'devops'
+}
+# end服务鉴权数据库
+PASSPORT_DATABASE = {
+    'host': '127.0.0.1',
+    'port': 3306,
+    'user': 'root',
+    'passwd': 'admin',
+    'db': 'highso_db1'
+}
+

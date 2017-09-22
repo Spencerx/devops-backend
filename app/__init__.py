@@ -3,7 +3,9 @@
 
 from flask import Flask
 from jinja2.utils import import_string
-import os, logging, commands
+import os
+import logging
+from config import Config
 from flask_cors import CORS
 
 blueprints = [
@@ -19,34 +21,23 @@ def create_app():
     app = Flask(__name__)
     load_config(app)
     register_blueprints(app)
-    load_ext(app)
     CORS(app)
     return app
 
 
 def load_config(app):
-    env = os.environ.get('zen_env', 'dev')
+    env = os.environ.get('devops_env', 'dev')
     app.config.from_object(
         'config.Prod') if env == 'prod' else app.config.from_object('config.Dev')
 
-    # app.debug = True
-    # #接口日志
-    # handler = logging.FileHandler('{0}/devops.log'.format(Config.LOG_DIR))
-    # app.logger.addHandler(handler)
-
-
-def load_ext(app):
-    init_setup_img()
-    # from .extensions import db
-    # from .extensions import login_manager
-    # from .extensions import cas
-    # from .extensions import api
-    # api.init_app(app)
-    # db.init_app(app)
-    # api.init_app(app)
-    # login_manager.session_protection = 'strong'
-    # login_manager.login_view='auth.login'
-    # login_manager.init_app(app)
+    app.debug = True
+    # 接口日志
+    handler = logging.FileHandler('{0}/devops.log'.format(Config.LOG_DIR))
+    handler.setLevel(logging.INFO)
+    logging_format = logging.Formatter(
+        '%(asctime)s - %(levelname)s - %(filename)s - %(funcName)s - %(lineno)s - %(message)s')
+    handler.setFormatter(logging_format)
+    app.logger.addHandler(handler)
 
 
 def register_blueprints(app):
@@ -58,8 +49,4 @@ def register_blueprints(app):
     for bp_info in blueprints:
         bp = import_string(bp_info[0])
         app.register_blueprint(bp, url_prefix=bp_info[1])
-
-
-def init_setup_img():
-    pass
 

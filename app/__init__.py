@@ -14,6 +14,7 @@ blueprints = [
     ('app.views.openApi:common', '/api/v1/common'),
     ('app.views.user:user', '/api/v1/user'),
     ('app.views.team:team', '/api/v1/team'),
+    ('app.views.config:config', '/api/v1/config'),
 ]
 
 

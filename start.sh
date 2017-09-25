@@ -1,7 +1,11 @@
+# dependance install
 echo "install requirment"
 pip install -r dependance
 echo "finish install dependance"
 echo "start up ..."
+
+
+# start up image
 echo  "
              ▄▄▄▄▄
                ▀▀▀██████▄▄▄       _______________
@@ -30,4 +34,5 @@ echo  "
                   ██
       "
 
-gunicorn -b 0.0.0.0:8888 -w 12 -k gevent --access-logfile=- --access-logformat=%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" devops:app
+# start command
+gunicorn -b 0.0.0.0:8888 -w 12 -k gevent --access-logfile=- --access-logformat='"%(h)s" "%(t)s" "%(r)s" %(s)s %(b)s" "%(L)s"' devops:app

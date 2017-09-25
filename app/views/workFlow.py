@@ -179,6 +179,7 @@ def create_workflow():
 
         # 数据库变更
         elif flow_type == 2:
+            mail_ids = ''
             team_name = form_data['team_name']
             test_user = int(form_data['test_user'])
             create_user = form_data['create_user']
@@ -194,6 +195,7 @@ def create_workflow():
                          deploy_start_time=deploy_start_time, deploy_end_time=deploy_end_time)
             w.save()
             w_id = w.w
+            mail_ids = mail_ids + str(w_id) + " "  # 批量审批工作流的id字符串拼接值
             email_data = {
                 "team_name": id_to_team(team_name),
                 "test_user": id_to_user(test_user),
@@ -202,39 +204,42 @@ def create_workflow():
                 "create_time": create_time,
                 "deploy_start_time": deploy_start_time,
                 "deploy_end_time": deploy_end_time,
-                "id": w_id,
+                "id": mail_ids,
+                'create_user': id_to_user(int(create_user))
             }
-            async_send_email(to_list, u"数据库变更审批", email_data, e_type=flow_type)
+            r = create_redis_connection()
+            r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u'数据库变更审批',
+                                            'data': email_data, 'e_type': flow_type})
             return response_json(200, '', 'ceate successful')
 
         # 配置变更
         elif flow_type == 3:
-            service = form_data['service']
             team_name = form_data['team_name']
             test_user = int(form_data['test_user'])
             create_user = form_data['create_user']
-            sql_info = form_data['sql_info']
-            config = form_data['config']
+            config_info = form_data['config_info']
             comment = form_data['comment']
-            deploy_start_time = form_data['deploy_time'][0]
-            deploy_end_time = form_data['deploy_time'][1]
+            deploy_start_time = datetime.datetime.strptime(form_data['deploy_time'][0], utc_format). \
+                strftime('%Y-%m-%d %H:%M:%S')
+            deploy_end_time = datetime.datetime.strptime(form_data['deploy_time'][1], utc_format). \
+                strftime('%Y-%m-%d %H:%M:%S')
             create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            w = Workflow(service=service, create_time=create_time, test_user=test_user, type=flow_type,
-                         sql_info=sql_info, team_name=team_name, comment=comment, create_user=create_user,
+            w = Workflow(create_time=create_time, test_user=test_user, type=flow_type,
+                         config=config_info, team_name=team_name, comment=comment, create_user=create_user,
                          deploy_start_time=deploy_start_time, deploy_end_time=deploy_end_time)
             w.save()
             w_id = w.w
             email_data = {
-                "service": id_to_service(service),
                 "team_name": id_to_team(team_name),
                 "test_user": id_to_user(test_user),
-                "sql_info": sql_info,
+                "config": config_info,
                 "comment": comment,
                 "create_time": create_time,
-                "config": config,
+                "deploy_start_time": deploy_start_time,
+                "deploy_end_time": deploy_end_time,
                 "id": w_id,
             }
-            async_send_email(to_list, u"配置变更审批", email_data, e_type="approve")
+            async_send_email(to_list, u"数据库变更审批", email_data, e_type=flow_type)
             return response_json(200, '', 'ceate successful')
 
         # 权限申请

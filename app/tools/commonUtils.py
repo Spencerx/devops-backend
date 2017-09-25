@@ -39,12 +39,17 @@ def async_send_email(to_list, subject, data, e_type):
     :param e_type: 邮件类型 例如 审批等等
     :return:
     """
+    print to_list
+    print subject
+    print data
+    print e_type
     for to in to_list:
+        # 系统上线邮件
         if e_type == 1:
             html = """
         <html><body>
         <div>
-                <h1>系统上线申请</h1>
+                <h1>{14}</h1>
 <h3>请到运维平台完成审批或点击快速审批按钮完成一键快速审批</h3>
 <button style="background-color: deepskyblue"><a href="{13}?token={12}" style="text-decoration: none">一键快速审批</a></button>
 </div>
@@ -87,7 +92,7 @@ def async_send_email(to_list, subject, data, e_type):
   </tr>
 
   <tr>
-    <td style="background-color: lightgrey">发布时间</td>
+    <td style="background-color: lightgrey">创建时间</td>
     <td style="background-color: lightgrey">{7}</td>
   </tr>
 
@@ -117,58 +122,65 @@ def async_send_email(to_list, subject, data, e_type):
         """.format(data["id"], data["team_name"], data["service"], data["version"],
                    data["dev_user"], data["test_user"], data["production_user"], data["create_time"], data["sql_info"],
                    data["config"], data['deploy_info'], data["comment"],
-                   generate_confirm_email_token(to[0], data["id"]), EMAIL_CONFIRM_PREFIX)
+                   generate_confirm_email_token(to[0], data["id"]), EMAIL_CONFIRM_PREFIX, subject)
 
+        # 数据库变更邮件
         elif e_type == 2:
             html = """
-                <html><body>
-                <div>
-                        <h1>上线申请</h1>
-        <h4>请到运维平台完成审批</h4>
-        </div>
-        <div style="margin-top: 1%">
-        <table style="width: 550px"  border="0" cellpadding="13" cellspacing="1">
-          <thead>
-          <tr>
-            <td style="background-color: #56b6c2">工作流ID</td>
-            <td style="background-color: grey">{0}</td>
-          </tr>
-          
-           <tr>
-            <td style="background-color: #56b6c2">创建时间</td>
-            <td style="background-color: grey">{1}</td>
-          </tr>
-
-          <tr>
-            <td style="background-color: #56b6c2">团队</td>
-            <td style="background-color: grey">{2}</td>
-          </tr>
-
-          <tr>
-            <td  style="background-color: #56b6c2">测试负责人</td>
-            <td style="background-color: grey">{3}</td>
-          </tr>
-
-          <tr>
-            <td style="background-color: #56b6c2">发布时间</td>
-            <td style="background-color: grey">{4} - {5}</td>
-          </tr>
-
-          <tr>
-            <td style="background-color: #56b6c2">SQL</td>
-            <td style="background-color: grey">{6}</td>
-          </tr>
-
-          <tr>
-            <td style="background-color: #56b6c2">备注</td>
-            <td style="background-color: grey">{7}</td>
-          </tr>
-          </tbody>
-        </table>
+        <html><body>
         <div>
-        </body></html>      
-                """.format(data["id"], data['create_time'], data["team_name"], data["test_user"],
-                           data["deploy_start_time"], data["deploy_end_time"], data["sql_info"], data["comment"])
+                <h1>{11}</h1>
+<h3>请到运维平台完成审批或点击快速审批按钮完成一键快速审批</h3>
+<button style="background-color: deepskyblue"><a href="{9}?token={10}" style="text-decoration: none">一键快速审批</a></button>
+</div>
+<div style="margin-top: 1%">
+<table style="width: 550px"  border="0" cellpadding="13" cellspacing="1">
+  <thead>
+  <tr>
+    <td style="background-color: lightgrey">工作流ID</td>
+    <td style="background-color: lightgrey">{0}</td>
+  </tr>
+
+  <tr>
+    <td style="background-color: lightgrey">创建时间</td>
+    <td style="background-color: lightgrey">{1}</td>
+  </tr>
+
+  <tr>
+    <td style="background-color: lightgrey">创建人</td>
+    <td style="background-color: lightgrey">{2}</td>
+  </tr>
+  
+  <tr>
+    <td style="background-color: lightgrey">团队</td>
+    <td style="background-color: lightgrey">{3}</td>
+  </tr>
+
+  <tr>
+    <td style="background-color: lightgrey">测试负责人</td>
+    <td style="background-color: lightgrey">{4}</td>
+  </tr>
+
+  <tr>
+    <td style="background-color: lightgrey">部署时间</td>
+    <td style="background-color: lightgrey">{5} - {6}</td>
+  </tr>
+  
+   <tr>
+    <td style="background-color: lightgrey">配置变更详情</td>
+    <td style="background-color: lightgrey">{7}</td>
+  </tr>
+
+  <tr>
+    <td style="background-color: lightgrey">备至</td>
+    <td style="background-color: lightgrey">{8}</td>
+  </tr>
+  </tbody>
+</table>
+<div>
+</body></html>""".format(data["id"], data['create_user'], data['create_time'], data["team_name"], data["test_user"],
+                         data["deploy_start_time"], data["deploy_end_time"], data["sql_info"], data["comment"],
+                         EMAIL_CONFIRM_PREFIX, generate_confirm_email_token(to[0], data["id"]), subject)
 
         send_mail(to[1], subject, html)
 

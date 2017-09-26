@@ -19,7 +19,6 @@ if env == 'prod':
     from app.private_config import ProdConfig as Config
 else:
     from app.private_config import DevConfig as Config
-print os.environ.get('ads_env')
 
 reload(sys)
 sys.setdefaultencoding('utf-8')

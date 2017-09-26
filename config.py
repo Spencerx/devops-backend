@@ -41,7 +41,7 @@ class Dev(Config):
     SALT_PASSWORD = 'admin'
     SALT_EAUTH = 'pam'
 
-    # redis
+    # redis for save token and cache
     REDIS_URL = '127.0.0.1'
     REDIS_PORT = 6379
 
@@ -61,7 +61,7 @@ class Prod(Config):
 
     # SQLAdvisor
     SQLADVISOR_DB = {
-        'host': '42.62.97.',
+        'host': '42.62..',
         'port': 3306,
         'user': 'techdb1',
         'password': 'techdb1#@!812!',
@@ -74,9 +74,9 @@ class Prod(Config):
     SALT_PASSWORD = 'admin'
     SALT_EAUTH = 'pam'
 
-    # redis
+    # redis for save token and cache
     REDIS_URL = '127.0.0.1'
-    REDIS_PORT = 6379
+    REDIS_PORT = 16379
 
     # devops start up server ip and port
     DEVOPS = {

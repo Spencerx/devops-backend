@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-from app.private_config import MAIL_ACCOUNT, MAIL_HOST, MAIL_PASSWORD, EMAIL_CONFIRM_PREFIX
+from __future__ import absolute_import
+import os
 from email.mime.text import MIMEText
 from email.utils import formatdate
 from smtplib import SMTP
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from app.private_config import secret_key
+
+env = os.environ.get('ads_env', 'dev')
+if env == 'prod':
+    from ..private_config import ProdConfig as Config
+else:
+    from ..private_config import DevConfig as Config
 
 
 def send_mail(to, subject, content):
@@ -19,13 +24,13 @@ def send_mail(to, subject, content):
        """
     msg = MIMEText(content, _subtype='html', _charset='utf-8')
     msg['To'] = to
-    msg['From'] = MAIL_ACCOUNT
+    msg['From'] = Config.MAIL_ACCOUNT
     msg['Subject'] = subject
     msg['Date'] = formatdate(localtime=1)
-    smtp_server = MAIL_HOST
+    smtp_server = Config.MAIL_HOST
     # msg['Message-id'] = make_msgid() msg id
     smtp = SMTP(smtp_server)
-    smtp.login(MAIL_ACCOUNT, MAIL_PASSWORD)
+    smtp.login(Config.MAIL_ACCOUNT, Config.MAIL_PASSWORD)
     smtp.sendmail(msg['From'], msg['To'], msg.as_string())
     smtp.quit()
 
@@ -122,7 +127,7 @@ def async_send_email(to_list, subject, data, e_type):
         """.format(data["id"], data["team_name"], data["service"], data["version"],
                    data["dev_user"], data["test_user"], data["production_user"], data["create_time"], data["sql_info"],
                    data["config"], data['deploy_info'], data["comment"],
-                   generate_confirm_email_token(to[0], data["id"]), EMAIL_CONFIRM_PREFIX, subject)
+                   generate_confirm_email_token(to[0], data["id"]), Config.EMAIL_CONFIRM_PREFIX, subject)
 
         # 数据库变更邮件
         elif e_type == 2:
@@ -180,7 +185,7 @@ def async_send_email(to_list, subject, data, e_type):
 <div>
 </body></html>""".format(data["id"], data['create_user'], data['create_time'], data["team_name"], data["test_user"],
                          data["deploy_start_time"], data["deploy_end_time"], data["sql_info"], data["comment"],
-                         EMAIL_CONFIRM_PREFIX, generate_confirm_email_token(to[0], data["id"]), subject)
+                         Config.EMAIL_CONFIRM_PREFIX, generate_confirm_email_token(to[0], data["id"]), subject)
 
         send_mail(to[1], subject, html)
 
@@ -192,7 +197,7 @@ def generate_confirm_email_token(uid, w_id):
     :param w_id: 工作流的id(可能我是多个id的拼接的字符串 examp:"1,5,2")
     :return: 用于加在审批链接后的get参数 用于后端识别审批者和审批工作流
     """
-    s = Serializer(secret_key=secret_key)
+    s = Serializer(secret_key=Config.secret_key)
     return s.dumps({'uid': uid, 'w_id': w_id})
 
 
@@ -202,7 +207,7 @@ def decrypt_email_token(token):
     :param token: generate_confirm_email_token 加密后的token信息
     :return:  审批者id 工作流id
     """
-    s = Serializer(secret_key=secret_key)
+    s = Serializer(secret_key=Config.secret_key)
     try:
         data = s.loads(token)
     except Exception, e:

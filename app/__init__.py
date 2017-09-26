@@ -27,7 +27,7 @@ def create_app():
 
 
 def load_config(app):
-    env = os.environ.get('devops_env', 'dev')
+    env = os.environ.get('ads_env', 'dev')
     app.config.from_object(
         'config.Prod') if env == 'prod' else app.config.from_object('config.Dev')
 

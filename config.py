@@ -5,7 +5,7 @@ import os
 from datetime import timedelta
 
 
-class Config():
+class Config:
     def __init__(self):
         pass
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -26,18 +26,9 @@ class Dev(Config):
     DEBUG = True
     secret_key = '5as7**%sd5^s7x)!'
 
-    # main database
-    DATABASE = {
-        'host': '192.168.132.229',
-        'port': 3306,
-        'user': 'docker',
-        'passwd': 'docker',
-        'db': 'blog'
-    }
-
     # SQLAdvisor
     SQLADVISOR_DB = {
-        'host': '42.62.97.',
+        'host': '',
         'port': 3306,
         'user': 'techdb1',
         'password': 'techdb1#@!812!',
@@ -90,5 +81,5 @@ class Prod(Config):
     # devops start up server ip and port
     DEVOPS = {
         "IP": "0.0.0.0",
-        "PORT": 8888,
+        "PORT": 18888,
     }

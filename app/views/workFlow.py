@@ -9,7 +9,8 @@ from app.models.services import Services
 from flask import Blueprint, request
 from app.tools.jsonUtils import response_json
 from app.tools.redisUtils import create_redis_connection
-from app.tools.ormUtils import id_to_user, id_to_service, id_to_team, id_to_status, id_to_flow_type, service_to_id, querylastversion_by_id
+from app.tools.ormUtils import id_to_user, id_to_service, id_to_team, id_to_status, id_to_flow_type, \
+    service_to_id, querylastversion_by_id
 from app.tools.commonUtils import async_send_email
 import gevent.monkey
 gevent.monkey.patch_all()
@@ -74,13 +75,13 @@ def workflow_history_search():
     """
     if request.method == 'POST':
         form_data = request.get_json()
-        id = form_data['id']
+        flow_id = form_data['id']
         team = form_data['team']
         create_time = form_data['create_time']
         is_deploy = form_data['is_deploy']
         if id:
             try:
-                workflow = Workflow.select().where(Workflow.w == id).get()
+                workflow = Workflow.select().where(Workflow.w == flow_id).get()
             except Exception, e:
                 print e
                 return response_json(200, '', {'count': 0, 'data': []})
@@ -88,19 +89,30 @@ def workflow_history_search():
             per_flow = {
                 'ID': workflow.w,
                 'create_time': workflow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
-                'team_name': workflow.team_name,
-                'dev_user': workflow.dev_user,
-                'test_user': workflow.test_user,
+                'deploy_start_time': workflow.deploy_start_time.strftime(
+                    '%Y-%m-%d %H:%M:%M') if workflow.deploy_start_time else '',
+                'deploy_end_time': workflow.deploy_end_time.strftime(
+                    '%Y-%m-%d %H:%M:%M') if workflow.deploy_end_time else '',
+                'close_time': workflow.close_time.strftime('%Y-%m-%d %H:%M:%M') if workflow.close_time else '',
+                'team_name': id_to_team(workflow.team_name),
+                'dev_user': id_to_user(workflow.dev_user),
+                'test_user': id_to_user(workflow.test_user),
+                'create_user': id_to_user(workflow.create_user),
                 'sql_info': workflow.sql_info,
-                'production_user': workflow.production_user,
+                'production_user': id_to_user(workflow.production_user),
+                'flow_type': id_to_flow_type(workflow.type),
                 'current_version': workflow.current_version,
-                'last_version': workflow.last_version,
+                'last_version': querylastversion_by_id(workflow.service),
                 'comment': workflow.comment,
                 'deploy_info': workflow.deploy_info,
-                'service': workflow.service,
                 'status': workflow.status,
                 'status_info': id_to_status(workflow.status),
-                'approved_user': workflow.approved_user
+                'service': id_to_service(workflow.service) if workflow.service else '',
+                'approved_user': id_to_user(workflow.approved_user) if workflow.approved_user else '',
+                'ops_user': id_to_user(workflow.ops_user) if workflow.ops_user else '',
+                'config': workflow.config if workflow.config else '',
+                'deny_info': workflow.deny_info if workflow.deny_info else '',
+                'access_info': workflow.access_info if workflow.access_info else '',
             }
             data.append(per_flow)
             flow_count = len(data)
@@ -108,7 +120,7 @@ def workflow_history_search():
         else:
             pass
     else:
-        return ''
+        return response_json(200, '', '')
 
 
 @workflow.route('/create', methods=['POST', 'OPTION'])

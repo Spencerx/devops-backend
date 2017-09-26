@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 from flask import request, abort
 from app import create_app
-from config import Dev
 from app.tools.tokenUtils import decrypt_token, check_token_status
 app = create_app()
 
@@ -40,4 +39,4 @@ def after_request(response):
 
 
 if __name__ == '__main__':
-    app.run(host=Dev.DEVOPS['IP'], port=Dev.DEVOPS['PORT'], threaded=True)
+    app.run(host=app.config.get('DEVOPS')['IP'], port=app.config.get('DEVOPS')['PORT'], threaded=True)

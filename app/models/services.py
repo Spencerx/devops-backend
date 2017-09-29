@@ -16,7 +16,12 @@ class BaseModel(Model):
 class Services(BaseModel):
     s = PrimaryKeyField(db_column='s_id')
     service_name = CharField()
-    war_url = CharField(null=True)
+    comment = CharField()
+    type = CharField(null=True)
+    language = CharField(null=True)
+    service_status = CharField()
+    service_leader = IntegerField()
+    create_time = DateTimeField()
     current_version = CharField(null=True)
 
     class Meta:

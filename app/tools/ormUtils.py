@@ -4,7 +4,7 @@ from app.models.users import Users
 from app.models.teams import Teams
 from app.models.services import Services
 from app.models.status import Status
-from app.models.flow_type import FlowTyle
+from app.models.flow_type import FlowType
 from app.models.roles import Roles
 
 # id和中文名的转换工具集
@@ -44,7 +44,7 @@ def id_to_status(id):
 
 def id_to_flow_type(id):
     try:
-        s = FlowTyle.select().where(FlowTyle.id == id).get()
+        s = FlowType.select().where(FlowType.id == id).get()
         return s.type
     except Exception, e:
         return ""

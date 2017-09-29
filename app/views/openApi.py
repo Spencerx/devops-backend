@@ -57,7 +57,7 @@ def service_list():
             data.append(per_service)
         return jsonify(data)
     except Exception, e:
-        current_app.logger.error("open api get all service has error message:{0}".format(e.message))
+        current_app.logger.error("open api get all service has error message:{0}".format(e))
         return response_json(500, e.message, '')
 
 
@@ -79,7 +79,7 @@ def user_list():
             data.append(per_user)
         return response_json(200, '', data=data)
     except Exception, e:
-        current_app.logger.error("open api get all registed users has error message:{0}".format(e.message))
+        current_app.logger.error("open api get all registed users has error message:{0}".format(e))
         return response_json(500, e.message, '')
 
 

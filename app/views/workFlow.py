@@ -4,7 +4,7 @@
 import datetime
 from app.models.workflows import Workflow
 from app.models.users import Users
-from app.models.flow_type import FlowTyle
+from app.models.flow_type import FlowType
 from app.models.services import Services
 from flask import Blueprint, request
 from app.tools.jsonUtils import response_json
@@ -422,7 +422,7 @@ def flow_type_list():
     获取工作流所有类型接口
     :return:
     """
-    ts = FlowTyle.select()
+    ts = FlowType.select()
     data = []
     for t in ts:
         per_type = {

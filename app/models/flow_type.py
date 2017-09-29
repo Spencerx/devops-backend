@@ -14,9 +14,9 @@ class BaseModel(Model):
         database = create_peewee_connection()
 
 
-class FlowTyle(BaseModel):
+class FlowType(BaseModel):
     id = IntegerField()
     type = CharField()
 
     class Meta:
-        db_table = 'flow_tyle'
+        db_table = 'flow_type'

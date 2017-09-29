@@ -137,7 +137,7 @@ def register():
             return response_json(500, u'密码错误', data='')
         else:
             u = Users(username=username, role=role, is_active=is_active, create_time=create_time,
-                      name_pinyin=username, email=email, name=name, can_approved="0")
+                      name_pinyin=username, email=email, name=name, can_approved="0", is_admin="0")
             try:
                 u.save()
                 current_app.logger.info('user {0} register success'.format(username))

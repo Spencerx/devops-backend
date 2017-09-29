@@ -84,6 +84,7 @@ def user_list():
                 "role": id_to_role(u.role),
                 "role_code": u.role,
                 "is_active": u'激活' if int(u.is_active) == 1 else u"未激活",
+                "is_admin": u'是' if int(u.is_admin) == 1 else u"否",
                 "can_approved": u'有' if int(u.can_approved) == 1 else u"无",
                 "email": u.email,
                 "name": u.name,
@@ -134,6 +135,7 @@ def modify():
         name = json_data['name']
         email = json_data['email']
         can_approved = json_data['can_approved']
+        is_admin = json_data['is_admin']
         role = json_data['role']
         try:
             u = Users.select().where(Users.id == int(uid)).get()
@@ -141,10 +143,13 @@ def modify():
             u.email = email
             u.role = int(role)
             u.can_approved = '1' if can_approved else '0'
+            u.is_admin = '1' if is_admin else '0'
             u.save()
             return response_json(200, '', 'update successful')
         except Exception, e:
             return response_json(500, e, '')
+    else:
+        return response_json(200, '', '')
 
 
 

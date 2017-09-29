@@ -15,6 +15,7 @@ blueprints = [
     ('app.views.user:user', '/api/v1/user'),
     ('app.views.team:team', '/api/v1/team'),
     ('app.views.config:config', '/api/v1/config'),
+    ('app.views.notice:notice', '/api/v1/notice'),
 ]
 
 

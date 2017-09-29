@@ -21,10 +21,6 @@
 #     print i.can_approved
 # 导入模块
 
-users = [
-    {'name': 'a', 'age': 1},
-    {'name': 'b', 'age': 2},
-    {'name': 'c', 'age': 3},
-]
+import datetime
 
-print [[i['name'], i['age']] for i in users]
+print type(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))

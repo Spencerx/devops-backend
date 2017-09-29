@@ -38,8 +38,7 @@ def history():
             per_flow = {
                 'ID': workflow.w,
                 'create_time': workflow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
-                'deploy_start_time': workflow.deploy_start_time.strftime('%Y-%m-%d %H:%M:%M') if workflow.deploy_start_time else '',
-                'deploy_end_time': workflow.deploy_end_time.strftime('%Y-%m-%d %H:%M:%M') if workflow.deploy_end_time else '',
+                'deploy_time': workflow.deploy_time.strftime('%Y-%m-%d %H:%M:%M') if workflow.deploy_time else '',
                 'close_time': workflow.close_time.strftime('%Y-%m-%d %H:%M:%M') if workflow.close_time else '',
                 'team_name': id_to_team(workflow.team_name),
                 'dev_user': id_to_user(workflow.dev_user),
@@ -75,13 +74,13 @@ def workflow_history_search():
     """
     if request.method == 'POST':
         form_data = request.get_json()
-        flow_id = form_data['id']
-        team = form_data['team']
-        create_time = form_data['create_time']
-        is_deploy = form_data['is_deploy']
+        try:
+            id = form_data['id']
+        except Exception, e:
+            id = None
         if id:
             try:
-                workflow = Workflow.select().where(Workflow.w == flow_id).get()
+                workflow = Workflow.select().where(Workflow.w == int(id)).get()
             except Exception, e:
                 print e
                 return response_json(200, '', {'count': 0, 'data': []})
@@ -89,10 +88,8 @@ def workflow_history_search():
             per_flow = {
                 'ID': workflow.w,
                 'create_time': workflow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
-                'deploy_start_time': workflow.deploy_start_time.strftime(
-                    '%Y-%m-%d %H:%M:%M') if workflow.deploy_start_time else '',
-                'deploy_end_time': workflow.deploy_end_time.strftime(
-                    '%Y-%m-%d %H:%M:%M') if workflow.deploy_end_time else '',
+                'deploy_time': workflow.deploy_time.strftime(
+                    '%Y-%m-%d %H:%M:%M') if workflow.deploy_time else '',
                 'close_time': workflow.close_time.strftime('%Y-%m-%d %H:%M:%M') if workflow.close_time else '',
                 'team_name': id_to_team(workflow.team_name),
                 'dev_user': id_to_user(workflow.dev_user),
@@ -148,10 +145,13 @@ def create_workflow():
             create_user = form_data['create_user']
             production_user = int(form_data['production_user'])
             sql_info = form_data['sql_info']
-            deploy_start_time = datetime.datetime.strptime(form_data['deploy_time'][0], utc_format). \
-                strftime('%Y-%m-%d %H:%M:%S')
-            deploy_end_time = datetime.datetime.strptime(form_data['deploy_time'][1], utc_format). \
-                strftime('%Y-%m-%d %H:%M:%S')
+            # 部署date
+            deploy_date = datetime.datetime.strptime(form_data['deploy_date'], utc_format). \
+                strftime('%Y-%m-%d')
+            # 部署time
+            deploy_time = form_data['deploy_time']
+            # 发布时间 time+date
+            deploy_order_time = deploy_date + " " + deploy_time
             comment = form_data['comment']
             deploy_info = form_data['deploy_info']
             config = form_data['config']
@@ -163,8 +163,8 @@ def create_workflow():
                 mail_versions = mail_versions + version + " "
                 w = Workflow(service=service_to_id(service_name), create_time=create_time,
                              dev_user=dev_user, test_user=test_user, production_user=production_user,
-                             current_version=version, type=flow_type, deploy_start_time=deploy_start_time,
-                             sql_info=sql_info, team_name=team_name, comment=comment, deploy_end_time=deploy_end_time,
+                             current_version=version, type=flow_type, deploy_time=deploy_order_time,
+                             sql_info=sql_info, team_name=team_name, comment=comment,
                              deploy_info=deploy_info, config=config, create_user=create_user)
                 w.save()
                 w_id = w.w
@@ -197,14 +197,17 @@ def create_workflow():
             create_user = form_data['create_user']
             sql_info = form_data['sql_info']
             comment = form_data['comment']
-            deploy_start_time = datetime.datetime.strptime(form_data['deploy_time'][0], utc_format).\
-                strftime('%Y-%m-%d %H:%M:%S')
-            deploy_end_time = datetime.datetime.strptime(form_data['deploy_time'][1], utc_format).\
-                strftime('%Y-%m-%d %H:%M:%S')
+            # 部署date
+            deploy_date = datetime.datetime.strptime(form_data['deploy_date'], utc_format). \
+                strftime('%Y-%m-%d')
+            # 部署time
+            deploy_time = form_data['deploy_time']
+            # 发布时间 time+date
+            deploy_order_time = deploy_date + " " + deploy_time
             create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             w = Workflow(create_time=create_time, test_user=test_user, type=flow_type,
                          sql_info=sql_info, team_name=team_name, comment=comment, create_user=create_user,
-                         deploy_start_time=deploy_start_time, deploy_end_time=deploy_end_time)
+                         deploy_time=deploy_order_time, deploy_end_time=deploy_order_time)
             w.save()
             w_id = w.w
             mail_ids = mail_ids + str(w_id) + " "  # 批量审批工作流的id字符串拼接值
@@ -214,8 +217,7 @@ def create_workflow():
                 "sql_info": sql_info,
                 "comment": comment,
                 "create_time": create_time,
-                "deploy_start_time": deploy_start_time,
-                "deploy_end_time": deploy_end_time,
+                "deploy_time": deploy_order_time,
                 "id": mail_ids,
                 'create_user': id_to_user(int(create_user))
             }
@@ -231,14 +233,17 @@ def create_workflow():
             create_user = form_data['create_user']
             config_info = form_data['config_info']
             comment = form_data['comment']
-            deploy_start_time = datetime.datetime.strptime(form_data['deploy_time'][0], utc_format). \
-                strftime('%Y-%m-%d %H:%M:%S')
-            deploy_end_time = datetime.datetime.strptime(form_data['deploy_time'][1], utc_format). \
-                strftime('%Y-%m-%d %H:%M:%S')
+            # 部署date
+            deploy_date = datetime.datetime.strptime(form_data['deploy_date'], utc_format). \
+                strftime('%Y-%m-%d')
+            # 部署time
+            deploy_time = form_data['deploy_time']
+            # 发布时间 time+date
+            deploy_order_time = deploy_date + " " + deploy_time
             create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             w = Workflow(create_time=create_time, test_user=test_user, type=flow_type,
                          config=config_info, team_name=team_name, comment=comment, create_user=create_user,
-                         deploy_start_time=deploy_start_time, deploy_end_time=deploy_end_time)
+                         deploy_time=deploy_order_time)
             w.save()
             w_id = w.w
             email_data = {
@@ -247,8 +252,7 @@ def create_workflow():
                 "config": config_info,
                 "comment": comment,
                 "create_time": create_time,
-                "deploy_start_time": deploy_start_time,
-                "deploy_end_time": deploy_end_time,
+                "deploy_time": deploy_order_time,
                 "id": w_id,
             }
             async_send_email(to_list, u"数据库变更审批", email_data, e_type=flow_type)
@@ -278,12 +282,12 @@ def my_flow():
         user_role = u.role
         can_approved = int(u.can_approved)
         workflow_list = []
-        if int(user_role) == 2:
+        if int(user_role) == 1:
             flows = Workflow.select().where(Workflow.status == 2)
             for flow in flows:
                 workflow_list.append(flow.w)
 
-        if int(user_role) == 4:
+        if int(user_role) == 3:
             flows = Workflow.select().where((Workflow.status == 3) & (Workflow.test_user == uid))
             for flow in flows:
                 workflow_list.append(flow.w)
@@ -303,6 +307,7 @@ def my_flow():
                     per_flow_data = {
                         'ID': per_flow.w,
                         'create_time': per_flow.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                        'deploy_time': per_flow.deploy_time.strftime('%Y-%m-%d %H:%M:%S'),
                         'team_name': per_flow.team_name,
                         'sql_info': per_flow.sql_info if per_flow.sql_info else '',
                         'test_user': id_to_user(per_flow.test_user) if per_flow.test_user else '',

@@ -39,4 +39,5 @@ def after_request(response):
 
 
 if __name__ == '__main__':
+    print app.config
     app.run(host=app.config.get('DEVOPS')['IP'], port=app.config.get('DEVOPS')['PORT'], threaded=True)

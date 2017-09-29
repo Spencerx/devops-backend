@@ -30,10 +30,10 @@ def userinfo():
                     uid = u.id
                     can_approved = u.can_approved
                     my_flow_count = 0
-                    if int(user_role) == 2:
+                    if int(user_role) == 1:
                         my_flow_count += Workflow.select().where(Workflow.status == 2).count()
 
-                    if int(user_role) == 4:
+                    if int(user_role) == 3:
                         my_flow_count += Workflow.select().where((Workflow.status == 3) &
                                                                  (Workflow.test_user == uid)).count()
                     if int(can_approved):
@@ -47,6 +47,7 @@ def userinfo():
                         'uid': u.id,
                         'token': token,
                         'name': u.name if u.name else '',
+                        'is_admin': u.is_admin if u.is_admin else '',
                     }
                 except Exception, e:
                     return response_json(500, u'用户未找到', '')

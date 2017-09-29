@@ -19,6 +19,7 @@ class Users(BaseModel):
     username = CharField()
     role = CharField()
     is_active = CharField()
+    is_admin = CharField()
     name_pinyin = CharField()
     can_approved = CharField()
     email = CharField()

@@ -36,6 +36,7 @@ class Workflow(BaseModel):
     deny_info = CharField()
     access_info = CharField()
     type = IntegerField()
+    is_except = IntegerField()
 
     class Meta:
         db_table = 'workflow'

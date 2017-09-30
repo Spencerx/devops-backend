@@ -6,11 +6,12 @@ from app.models.workflows import Workflow
 from app.models.users import Users
 from app.models.flow_type import FlowType
 from app.models.services import Services
+from app.models.bugs import Bugs
 from flask import Blueprint, request
 from app.tools.jsonUtils import response_json
 from app.tools.redisUtils import create_redis_connection
 from app.tools.ormUtils import id_to_user, id_to_service, id_to_team, id_to_status, id_to_flow_type, \
-    service_to_id, querylastversion_by_id
+    service_to_id, querylastversion_by_id, flow_type_to_id
 from app.tools.commonUtils import async_send_email
 import gevent.monkey
 gevent.monkey.patch_all()
@@ -35,6 +36,10 @@ def history():
                 order_by(Workflow.w.desc())
         data = []
         for workflow in ws:
+            if workflow.is_except == 1:
+                except_info = Bugs.select().where(Bugs.flow_id == workflow.w).get().exception_info
+            else:
+                except_info = ''
             per_flow = {
                 'ID': workflow.w,
                 'create_time': workflow.create_time.strftime('%Y-%m-%d %H:%M:%M'),
@@ -52,6 +57,8 @@ def history():
                 'comment': workflow.comment,
                 'deploy_info': workflow.deploy_info,
                 'status': workflow.status,
+                'is_except': workflow.is_except,
+                'except_info': except_info,
                 'status_info': id_to_status(workflow.status),
                 'service': id_to_service(workflow.service) if workflow.service else '',
                 'approved_user': id_to_user(workflow.approved_user) if workflow.approved_user else '',
@@ -103,6 +110,7 @@ def workflow_history_search():
                 'comment': workflow.comment,
                 'deploy_info': workflow.deploy_info,
                 'status': workflow.status,
+                'is_except': workflow.is_except,
                 'status_info': id_to_status(workflow.status),
                 'service': id_to_service(workflow.service) if workflow.service else '',
                 'approved_user': id_to_user(workflow.approved_user) if workflow.approved_user else '',
@@ -194,6 +202,7 @@ def create_workflow():
             mail_ids = ''
             team_name = form_data['team_name']
             test_user = int(form_data['test_user'])
+            dev_user = int(form_data['dev_user'])
             create_user = form_data['create_user']
             sql_info = form_data['sql_info']
             comment = form_data['comment']
@@ -205,7 +214,7 @@ def create_workflow():
             # 发布时间 time+date
             deploy_order_time = deploy_date + " " + deploy_time
             create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            w = Workflow(create_time=create_time, test_user=test_user, type=flow_type,
+            w = Workflow(create_time=create_time, test_user=test_user, type=flow_type, dev_user=dev_user,
                          sql_info=sql_info, team_name=team_name, comment=comment, create_user=create_user,
                          deploy_time=deploy_order_time, deploy_end_time=deploy_order_time)
             w.save()
@@ -230,6 +239,7 @@ def create_workflow():
         elif flow_type == 3:
             team_name = form_data['team_name']
             test_user = int(form_data['test_user'])
+            dev_user = int(form_data['dev_user'])
             create_user = form_data['create_user']
             config_info = form_data['config_info']
             comment = form_data['comment']
@@ -243,12 +253,13 @@ def create_workflow():
             create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             w = Workflow(create_time=create_time, test_user=test_user, type=flow_type,
                          config=config_info, team_name=team_name, comment=comment, create_user=create_user,
-                         deploy_time=deploy_order_time)
+                         deploy_time=deploy_order_time, dev_user=dev_user)
             w.save()
             w_id = w.w
             email_data = {
                 "team_name": id_to_team(team_name),
                 "test_user": id_to_user(test_user),
+                "dev_user": id_to_user(dev_user),
                 "config": config_info,
                 "comment": comment,
                 "create_time": create_time,
@@ -366,7 +377,7 @@ def approved_flow():
         return response_json(200, '', '')
 
 
-@workflow.route('/sure_deploy', methods=['POST', 'OPTION'])
+@workflow.route('/confirm_deploy', methods=['POST', 'OPTION'])
 def sure_deploy():
     """
     确认工作流中服务上线接口
@@ -376,24 +387,37 @@ def sure_deploy():
         json_data = request.get_json()
         uid = json_data['uid']
         w_id = json_data['w_id']
+        flow_type_id = int(flow_type_to_id(json_data['flow_type']))
         w = Workflow.select().where(Workflow.w == w_id).get()
-        s = Services.select().where(Services.s == int(w.service)).get()
-        if int(w.status) != 2:
-            return response_json(301, '', u'工作流状态检测到已经被改变')
-        s.current_version = w.current_version  # 修改该服务的最新版本为当前上线版本
-        w.status = int(w.status) + 1
-        w.ops_user = uid
-        try:
-            w.save()
-            s.save()
-            return response_json(200, '', '')
-        except Exception, e:
-            return response_json(500, e, '')
+        if flow_type_id == 1:
+            s = Services.select().where(Services.s == int(w.service)).get()
+            if int(w.status) != 2:
+                return response_json(301, '', u'工作流状态检测到已经被改变')
+            s.current_version = w.current_version  # 修改该服务的最新版本为当前上线版本
+            w.status = int(w.status) + 1
+            w.ops_user = uid
+            try:
+                w.save()
+                s.save()
+                return response_json(200, '', '')
+            except Exception, e:
+                return response_json(500, e, '')
+        elif flow_type_id == 2 or flow_type_id == 3:
+            w = Workflow.select().where(Workflow.w == w_id).get()
+            if int(w.status) != 2:
+                return response_json(301, '', u'工作流状态检测到已经被改变')
+            w.status = int(w.status) + 1
+            w.ops_user = uid
+            try:
+                w.save()
+                return response_json(200, '', '')
+            except Exception, e:
+                return response_json(500, e, '')
     else:
         return ""
 
 
-@workflow.route('/sure_test', methods=['POST', 'OPTION'])
+@workflow.route('/confirm_test', methods=['POST', 'OPTION'])
 def sure_test():
     """
     测试确认上线服务正常接口
@@ -401,17 +425,33 @@ def sure_test():
     """
     if request.method == "POST":
         json_data = request.get_json()
-        w_id = json_data['w_id']
+        w_id = json_data['flow_id']
+        is_except = json_data['is_except']
         w = Workflow.select().where(Workflow.w == w_id).get()
         if int(w.status) != 3:
+            """检测工作流是否被修改"""
             return response_json(301, '', u'工作流状态检测到已经被改变')
-        w.status = int(w.status) + 1
-        w.close_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        try:
+
+        if is_except:
+            """测试上线异常"""
+            except_info = json_data['except_info']
+            b = Bugs(flow_id=int(w_id), exception_info=except_info)
+            b.save()
+            w.is_except = 1
+            w.status = 6
+            w.close_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             w.save()
             return response_json(200, '', '')
-        except Exception, e:
-            return response_json(500, e, '')
+        else:
+            """测试上线没有异常"""
+            w.close_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            try:
+                w.status = int(w.status) + 1
+                w.is_except = 2
+                w.save()
+                return response_json(200, '', '')
+            except Exception, e:
+                return response_json(500, e, '')
     else:
         return ""
 

@@ -91,7 +91,7 @@ def service_to_id(service):
 
 def flow_type_to_id(flow_type):
     try:
-        s = FlowTyle.select().where(FlowTyle.type == flow_type).get()
+        s = FlowType.select().where(FlowType.type == flow_type).get()
         return s.id
     except Exception, e:
         return ""

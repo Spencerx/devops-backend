@@ -23,6 +23,7 @@ class Services(BaseModel):
     service_leader = IntegerField()
     create_time = DateTimeField()
     current_version = CharField(null=True)
+    is_switch_flow = IntegerField(default=2)
 
     class Meta:
         db_table = 'services'

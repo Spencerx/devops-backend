@@ -5,6 +5,8 @@ from flask import Blueprint, request, current_app
 from app.models.services import Services
 from app.tools.jsonUtils import response_json
 from app.tools.ormUtils import id_to_user
+from app.tools.switchflowUtils import registed_service
+from app.wrappers.permission import manager_required
 
 service = Blueprint('service', __name__)
 
@@ -32,6 +34,7 @@ def service_list():
                     'service_leader': id_to_user(s.service_leader),
                     "language": s.language,
                     'service_status': u'激活' if int(s.service_status) == 1 else u"未激活",
+                    'is_switch_flow': True if int(s.is_switch_flow) == 1 else False
                 }
                 data.append(per_team)
             return response_json(200, "", data=data)
@@ -43,6 +46,7 @@ def service_list():
 
 
 @service.route('/update_service', methods=['POST'])
+@manager_required
 def update_service():
     """
     修改服务配置接口
@@ -56,6 +60,7 @@ def update_service():
         service_type = json_data['type']
         comment = json_data['comment']
         language = json_data['language']
+        is_switch_flow = json_data['is_switch_flow']
         try:
             s = Services.select().where(Services.s == int(service_id)).get()
             s.service_name = service_name
@@ -63,6 +68,7 @@ def update_service():
             s.comment = comment
             s.type = service_type
             s.language = language
+            s.is_switch_flow = 1 if is_switch_flow else 2
             s.save()
             return response_json(200, '', 'modify service success')
         except Exception, e:
@@ -93,3 +99,76 @@ def active_delete_servie():
             return response_json(500, e, '')
     else:
         return response_json(200, '', '')
+
+
+@service.route('/upstream/switch_flow_on', methods=['POST'])
+@manager_required
+def switch_flow_on():
+    """
+    服务上线 nginx upstream开启对应的backend的流量
+    :return:
+    """
+    if request.method == "POST":
+        pass
+    else:
+        pass
+
+
+@service.route('/upstream/switch_flow_off', methods=['POST'])
+@manager_required
+def switch_flow_off():
+    """
+    服务上线 nginx upstream关闭对应的backend的流量
+    :return:
+    """
+    if request.method == "POST":
+        pass
+    else:
+        pass
+
+
+@service.route('/upstream/switch_flow_double_weight', methods=['POST'])
+@manager_required
+def switch_flow_double_weight():
+    """
+    upstream下的指定机器权重weight加倍 倍权
+    :return:
+    """
+    if request.method == "POST":
+        pass
+    else:
+        pass
+
+
+@service.route('/upstream/switch_flow_half_weight', methods=['POST'])
+@manager_required
+def switch_flow_half_weight():
+    """
+    upstream下的指定机器权重weight减半 半权
+    :return:
+    """
+    if request.method == "POST":
+        pass
+    else:
+        pass
+
+
+@service.route('/all_backend_info')
+def all_registed_service_backend_info():
+    """
+    获取所有切流量服务的backend信息接口
+    :return:
+    """
+    backends = registed_service(scope='all')
+    return response_json(200, '', data=backends)
+
+
+@service.route('/destined_backend_info')
+def destined_registed_service_backend_info():
+    """
+    获取指定服务名的backend信息接口
+    :return:
+    """
+    service_name = request.get_json('service')
+    backends = registed_service(scope='per', service=service_name)
+    return response_json(200, '', data=backends)

@@ -196,7 +196,7 @@ def async_send_approved_email(to_list, subject, data, e_type=None):
         else:
             send_mail(to[1], subject, data, is_cc=True)
             continue
-        send_mail(to[1], subject, html, is_cc=False)
+        send_mail(to[1], subject, html, is_cc=True)
 
 
 def async_send_closeflow_email(to_list, subject, data, e_type):

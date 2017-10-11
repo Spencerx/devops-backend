@@ -12,7 +12,7 @@ from app.models.services import Services
 from app.models.users import Users
 from app.models.roles import Roles
 from app.tools.jsonUtils import response_json
-from app.tools.commonUtils import decrypt_email_token
+from app.tools.emailUtils import decrypt_email_token
 
 common = Blueprint('common',__name__)
 reload(sys)

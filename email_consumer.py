@@ -10,10 +10,9 @@ import os
 import redis
 import logging
 import sys
-from app.tools.commonUtils import async_send_email
+from app.tools.emailUtils import async_send_approved_email
 from app.tools.redisUtils import create_redis_connection
 
-os.environ.setdefault('ads_env', 'prod')
 env = os.environ.get('ads_env', 'dev')
 if env == 'prod':
     from app.private_config import ProdConfig as Config
@@ -41,7 +40,7 @@ def consume_email():
         r = create_redis_connection()
         task = r.brpop(Config.EMAIL_QUEUE_KEY, 0)
     except Exception, e:
-        logging.error("email task queue redis has error message:".format(e.message))  # redis exception
+        logging.error("email task queue redis has error message:{0}".format(e))  # redis exception
     else:
         try:
             task = eval(task[1])
@@ -54,7 +53,7 @@ def consume_email():
             pass
         else:
             logging.info("to:{0} subject:{1}".format(str(to_list), subject))
-            async_send_email(to_list, subject, data, int(e_type))
+            async_send_approved_email(to_list, subject, data, int(e_type))
 
 
 if __name__ == '__main__':

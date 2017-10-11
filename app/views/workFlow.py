@@ -12,7 +12,7 @@ from app.tools.jsonUtils import response_json
 from app.tools.redisUtils import create_redis_connection
 from app.tools.ormUtils import id_to_user, id_to_service, id_to_team, id_to_status, id_to_flow_type, \
     service_to_id, querylastversion_by_id, flow_type_to_id
-from app.tools.commonUtils import async_send_email
+from app.tools.emailUtils import async_send_approved_email, notify_flow_to_deal
 import gevent.monkey
 gevent.monkey.patch_all()
 
@@ -191,6 +191,7 @@ def create_workflow():
                 "deploy_info": deploy_info,
                 "config": config,
                 "id": mail_ids,
+                "deploy_time": deploy_order_time,
             }
             r = create_redis_connection()
             r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u'上线审批',
@@ -266,7 +267,7 @@ def create_workflow():
                 "deploy_time": deploy_order_time,
                 "id": w_id,
             }
-            async_send_email(to_list, u"数据库变更审批", email_data, e_type=flow_type)
+            async_send_approved_email(to_list, u"数据库变更审批", email_data, e_type=flow_type)
             return response_json(200, '', 'ceate successful')
 
         # 权限申请
@@ -361,6 +362,14 @@ def approved_flow():
             w.access_info = suggestion
             w.approved_user = int(uid)
             w.save()
+
+            # email notify
+            to_list = []
+            create_user = Users.select().where(Users.id == int(w.create_user)).get()
+            to_list.append(create_user.email)
+            r = create_redis_connection()
+            r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流审批完成 等待部署",
+                                            'data': "工作流: {0} 审核完成, 等待运维部署".format(w_id), 'e_type': 5})
             return response_json(200, "", "")
         elif approved == "deny":
             if int(w.status) != 1:
@@ -374,6 +383,7 @@ def approved_flow():
         else:
             return response_json(500, u"审批参数无效", "")
     else:
+
         return response_json(200, '', '')
 
 

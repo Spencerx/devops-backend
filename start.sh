@@ -4,6 +4,7 @@ pip install -r dependance
 echo "finish install dependance"
 echo "start up ..."
 
+export /etc/profile
 
 # start up image
 echo  "

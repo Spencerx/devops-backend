@@ -14,16 +14,19 @@ else:
     from ..private_config import DevConfig as Config
 
 
-def send_mail(to, subject, content):
+def send_mail(to, subject, content, is_cc=False):
     """
        发送邮件接口
        :param to: 邮件接收人
        :param subject: 邮件主题
        :param content: 邮件主题正文
+       :param is_cc:是否抄送ops
        :return:
        """
     msg = MIMEText(content, _subtype='html', _charset='utf-8')
     msg['To'] = to
+    if is_cc:
+        msg['Cc'] = '591356683@qq.com'
     msg['From'] = Config.MAIL_ACCOUNT
     msg['Subject'] = subject
     msg['Date'] = formatdate(localtime=1)
@@ -35,7 +38,7 @@ def send_mail(to, subject, content):
     smtp.quit()
 
 
-def async_send_email(to_list, subject, data, e_type):
+def async_send_approved_email(to_list, subject, data, e_type):
     """
     gevent协程异步发送邮件
     :param to_list: 列表类型[[uid,email], [uid,email], [uid,email]]
@@ -44,10 +47,6 @@ def async_send_email(to_list, subject, data, e_type):
     :param e_type: 邮件类型 例如 审批等等
     :return:
     """
-    print to_list
-    print subject
-    print data
-    print e_type
     for to in to_list:
         # 系统上线邮件
         if e_type == 1:
@@ -100,6 +99,11 @@ def async_send_email(to_list, subject, data, e_type):
     <td style="background-color: lightgrey">创建时间</td>
     <td style="background-color: lightgrey">{7}</td>
   </tr>
+  
+  <tr>
+    <td style="background-color: lightgrey">发布时间</td>
+    <td style="background-color: lightgrey">{15}</td>
+  </tr>
 
   <tr>
     <td style="background-color: lightgrey">SQL</td>
@@ -127,16 +131,17 @@ def async_send_email(to_list, subject, data, e_type):
         """.format(data["id"], data["team_name"], data["service"], data["version"],
                    data["dev_user"], data["test_user"], data["production_user"], data["create_time"], data["sql_info"],
                    data["config"], data['deploy_info'], data["comment"],
-                   generate_confirm_email_token(to[0], data["id"]), Config.EMAIL_CONFIRM_PREFIX, subject)
+                   generate_confirm_email_token(to[0], data["id"]), Config.EMAIL_CONFIRM_PREFIX,
+                   subject, data["deploy_time"])
 
         # 数据库变更邮件
         elif e_type == 2:
             html = """
         <html><body>
         <div>
-                <h1>{11}</h1>
+                <h1>{10}</h1>
 <h3>请到运维平台完成审批或点击快速审批按钮完成一键快速审批</h3>
-<button style="background-color: deepskyblue"><a href="{9}?token={10}" style="text-decoration: none">一键快速审批</a></button>
+<button style="background-color: deepskyblue"><a href="{8}?token={9}" style="text-decoration: none">一键快速审批</a></button>
 </div>
 <div style="margin-top: 1%">
 <table style="width: 550px"  border="0" cellpadding="13" cellspacing="1">
@@ -168,26 +173,49 @@ def async_send_email(to_list, subject, data, e_type):
 
   <tr>
     <td style="background-color: lightgrey">部署时间</td>
-    <td style="background-color: lightgrey">{5} - {6}</td>
+    <td style="background-color: lightgrey">{5}</td>
   </tr>
   
    <tr>
     <td style="background-color: lightgrey">配置变更详情</td>
-    <td style="background-color: lightgrey">{7}</td>
+    <td style="background-color: lightgrey">{6}</td>
   </tr>
 
   <tr>
     <td style="background-color: lightgrey">备至</td>
-    <td style="background-color: lightgrey">{8}</td>
+    <td style="background-color: lightgrey">{7}</td>
   </tr>
   </tbody>
 </table>
 <div>
 </body></html>""".format(data["id"], data['create_user'], data['create_time'], data["team_name"], data["test_user"],
-                         data["deploy_start_time"], data["deploy_end_time"], data["sql_info"], data["comment"],
+                         data["deploy_time"], data["sql_info"], data["comment"],
                          Config.EMAIL_CONFIRM_PREFIX, generate_confirm_email_token(to[0], data["id"]), subject)
+        send_mail(to[1], subject, html, is_cc=False)
 
-        send_mail(to[1], subject, html)
+
+def async_send_closeflow_email(to_list, subject, data, e_type):
+    """
+    关闭工作流发送邮件
+    :param to_list:
+    :param subject:
+    :param data:
+    :param e_type: 1:正常关闭 2.驳回关闭 3.异常关闭
+    :return:
+    """
+    pass
+
+
+def notify_flow_to_deal(to_list, subject, data):
+    """
+    工作流到达通知处理
+    :param to_list:
+    :param subject:
+    :param data:
+    :return:
+    """
+    for to in to_list:
+        send_mail(to, subject, data, is_cc=True)
 
 
 def generate_confirm_email_token(uid, w_id):

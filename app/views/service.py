@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import requests
+import datetime
 from requests.exceptions import Timeout
 from json import JSONEncoder
 from urlparse import urljoin
 from flask import Blueprint, request, current_app
 from app.models.services import Services
 from app.tools.jsonUtils import response_json
-from app.tools.ormUtils import id_to_user
+from app.tools.ormUtils import id_to_user, user_to_id
 from app.tools.switchflowUtils import registed_service
 from app.wrappers.permission import manager_required
 
@@ -47,6 +48,27 @@ def service_list():
             return response_json(500, e, "")
     else:
         return response_json(200, "", "")
+
+
+@service.route('/create_service', methods=["POST"])
+@manager_required
+def create_service():
+    if request.method == "POST":
+        json_data = request.get_json()
+        service_name = json_data['service_name']
+        service_leader = user_to_id(json_data['service_leader'])
+        desc = json_data['desc']
+        language = json_data['language']
+        s = Services(service_name=service_name, comment=desc, service_leader=service_leader,
+                     create_time=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                     language=language, service_status='1')
+        try:
+            s.save()
+            return response_json(200, '', '')
+        except Exception, e:
+            return response_json(500, e, '')
+    else:
+        return response_json(200, '', '')
 
 
 @service.route('/update_service', methods=['POST'])

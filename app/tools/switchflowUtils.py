@@ -26,6 +26,7 @@ def registed_service(scope="", service=""):
             if scope == "all":
                 for s in all_service:
                     backend_attribute = s['Value']
+                    print base64.b64decode(backend_attribute)
                     per_upstream = s['Key'].split('/')
                     service_name = per_upstream[1]
                     ip = per_upstream[2].split(':')[0]

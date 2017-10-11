@@ -21,6 +21,30 @@
 #     print i.can_approved
 # 导入模块
 
-import datetime
+import requests
+#from nginx.config.api import Section,Config,Location
+r = requests.get("http://192.168.15.255:8080/api/v1/namespaces/default/services/")
+res = r.json()['items']
 
-print type(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+#events = Section('events', worker_connections='48000')
+#http = Section('http', include='mime.types', add_header="service $server_name")
+
+for item in res:
+    try:
+        if item['metadata']['labels']['extern']:
+            service_name = item['metadata']['name']
+            service_cluster_ip = item['spec']['clusterIP']
+            service_cluster_port = item['spec']['ports'][0]['port']
+            print service_name, service_cluster_ip, service_cluster_port
+    except KeyError, e:
+        pass
+#
+# nginx = Config(events, http, worker_processes=4, error_log='error.log',)
+# with file("nginx.conf", 'w') as f:
+#     f.write(str(nginx))
+
+import nginx
+
+
+
+

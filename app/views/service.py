@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import requests
+from requests.exceptions import Timeout
+from json import JSONEncoder
+from urlparse import urljoin
 from flask import Blueprint, request, current_app
 from app.models.services import Services
 from app.tools.jsonUtils import response_json
@@ -109,7 +113,24 @@ def switch_flow_on():
     :return:
     """
     if request.method == "POST":
-        pass
+        json_data = request.get_json()
+        try:
+            service_name = json_data['service']
+            ip = json_data['row']['ip']
+            port = str(json_data['row']['port'])
+            attribute = json_data['row']['attribute']
+            attribute['down'] = 0
+            attribute = JSONEncoder().encode(attribute)
+            r = requests.put(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
+                                     format(service_name, ip+":"+port)), data=str(attribute))
+            if r.status_code == 200:
+                return response_json(200, '', u'开启流量成功')
+            else:
+                return response_json(500, u'开启流量失败', '')
+        except Timeout, e:
+            current_app.logger.error(e)
+            return response_json(500, u'consul api time out')
+
     else:
         pass
 
@@ -122,7 +143,24 @@ def switch_flow_off():
     :return:
     """
     if request.method == "POST":
-        pass
+        json_data = request.get_json()
+        try:
+            service_name = json_data['service']
+            ip = json_data['row']['ip']
+            port = str(json_data['row']['port'])
+            attribute = json_data['row']['attribute']
+            attribute['down'] = 1
+            attribute = JSONEncoder().encode(attribute)
+            r = requests.put(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
+                                     format(service_name, ip+":"+port)), data=str(attribute))
+            if r.status_code == 200:
+                return response_json(200, '', u'关闭流量成功')
+            else:
+                return response_json(500, u'关闭流量失败', '')
+        except Timeout, e:
+            current_app.logger.error(e)
+            return response_json(500, u'consul api time out')
+
     else:
         pass
 
@@ -163,12 +201,16 @@ def all_registed_service_backend_info():
     return response_json(200, '', data=backends)
 
 
-@service.route('/destined_backend_info')
+@service.route('/destined_backend_info', methods=["POST"])
 def destined_registed_service_backend_info():
     """
     获取指定服务名的backend信息接口
     :return:
     """
-    service_name = request.get_json('service')
-    backends = registed_service(scope='per', service=service_name)
-    return response_json(200, '', data=backends)
+    if request.method == "POST":
+        service_name = request.get_json()['service']
+        backends = registed_service(scope='per', service=service_name)
+        return response_json(200, '', data=backends)
+    else:
+        response_json(200, '', '')
+

@@ -137,12 +137,15 @@ def check_sql():
         sql = json_data['sql']
         s = paramiko.SSHClient()
         s.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        s.connect(hostname='192.168.16.25', username='root', password='HX20170816!@#QAZcd')
+        s.connect(hostname=current_app.config['SQLADVISOR_EXEC_HOST']['host'],
+                  username=current_app.config['SQLADVISOR_EXEC_HOST']['user'],
+                  password=current_app.config['SQLADVISOR_EXEC_HOST']['password'],
+                  port=current_app.config['SQLADVISOR_EXEC_HOST']['port'])
         advisor_host = current_app.config['SQLADVISOR_DB']['host']
         advisor_port = current_app.config['SQLADVISOR_DB']['port']
         advisor_user = current_app.config['SQLADVISOR_DB']['user']
         advisor_password = current_app.config['SQLADVISOR_DB']['password']
-        advisor_database = "highso"
+        advisor_database = "highso_db1"
         command = """/bin/sqladvisor -h {0}  -P {1}  -u {2} -p '{3}' -d {4} -q "{5}" -v 1""".format(
             advisor_host, advisor_port, advisor_user, advisor_password, advisor_database, sql)
         stdin, stdout, stderr = s.exec_command(command=command, get_pty=True)

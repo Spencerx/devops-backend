@@ -12,7 +12,7 @@ from app.tools.jsonUtils import response_json
 from app.tools.redisUtils import create_redis_connection
 from app.tools.ormUtils import id_to_user, id_to_service, id_to_team, id_to_status, id_to_flow_type, \
     service_to_id, querylastversion_by_id, flow_type_to_id
-from app.tools.emailUtils import async_send_approved_email, notify_flow_to_deal
+from app.tools.emailUtils import async_send_approved_email
 import gevent.monkey
 gevent.monkey.patch_all()
 
@@ -363,13 +363,13 @@ def approved_flow():
             w.approved_user = int(uid)
             w.save()
 
-            # email notify
+            # 审核完成 邮件通知工作流创建者和运维
             to_list = []
             create_user = Users.select().where(Users.id == int(w.create_user)).get()
-            to_list.append(create_user.email)
+            to_list.append(['', create_user.email])
             r = create_redis_connection()
-            r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流审批完成 等待部署",
-                                            'data': "工作流: {0} 审核完成, 等待运维部署".format(w_id), 'e_type': 5})
+            r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
+                                            'data': "工作流ID: {0} 审核完成, 等待运维部署".format(w_id), 'e_type': 100})
             return response_json(200, "", "")
         elif approved == "deny":
             if int(w.status) != 1:
@@ -379,6 +379,14 @@ def approved_flow():
             w.deny_info = suggestion
             w.close_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             w.save()
+            # 工作流被驳回邮件通知 创建者
+            to_list = []
+            create_user = Users.select().where(Users.id == int(w.create_user)).get()
+            to_list.append(['', create_user.email])
+            r = create_redis_connection()
+            r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
+                                            'data': "工作流ID: {0} 审核失败, 详情:{1}".format(w_id, suggestion), 'e_type': 100})
+
             return response_json(200, "", "")
         else:
             return response_json(500, u"审批参数无效", "")
@@ -409,6 +417,16 @@ def sure_deploy():
             try:
                 w.save()
                 s.save()
+
+                # 部署完成 邮件通知相关测试和工作流创建者
+                to_list = []
+                create_user = Users.select().where(Users.id == int(w.create_user)).get()
+                test_user = Users.select().where(Users.id == int(w.test_user)).get()
+                to_list.append(['', create_user.email])
+                to_list.append(['', test_user.email])
+                r = create_redis_connection()
+                r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
+                                                'data': "工作流ID: {0} 部署完成, 等待测试确认".format(w_id), 'e_type': 100})
                 return response_json(200, '', '')
             except Exception, e:
                 return response_json(500, e, '')
@@ -451,6 +469,19 @@ def sure_test():
             w.status = 6
             w.close_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             w.save()
+
+            # 邮件通知与工作流相关的人员
+            to_list = []
+            create_user = Users.select().where(Users.id == int(w.create_user)).get()
+            test_user = Users.select().where(Users.id == int(w.test_user)).get()
+            dev_user = Users.select().where(Users.id == int(w.dev_user)).get()
+            to_list.append(['', create_user.email])
+            to_list.append(['', test_user.email])
+            to_list.append(['', dev_user.email])
+            r = create_redis_connection()
+            r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
+                                            'data': "工作流ID: {0} 测试发现异常, 异常信息{1}".
+                    format(w_id, except_info), 'e_type': 100})
             return response_json(200, '', '')
         else:
             """测试上线没有异常"""
@@ -459,6 +490,18 @@ def sure_test():
                 w.status = int(w.status) + 1
                 w.is_except = 2
                 w.save()
+
+                # 邮件通知与工作流相关的人员
+                to_list = []
+                create_user = Users.select().where(Users.id == int(w.create_user)).get()
+                test_user = Users.select().where(Users.id == int(w.test_use))
+                dev_user = Users.select().where(Users.id == int(w.dev_user))
+                to_list.append(['', create_user.email])
+                to_list.append(['', test_user.email])
+                to_list.append(['', dev_user.email])
+                r = create_redis_connection()
+                r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
+                                                'data': "工作流ID: {0} 测试确认部署完成,工作流关闭)".format(w_id), 'e_type': 100})
                 return response_json(200, '', '')
             except Exception, e:
                 return response_json(500, e, '')

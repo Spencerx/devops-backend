@@ -26,7 +26,7 @@ def send_mail(to, subject, content, is_cc=False):
     msg = MIMEText(content, _subtype='html', _charset='utf-8')
     msg['To'] = to
     if is_cc:
-        msg['Cc'] = '591356683@qq.com'
+        msg['Cc'] = 'ops@haixue.com'
     msg['From'] = Config.MAIL_ACCOUNT
     msg['Subject'] = subject
     msg['Date'] = formatdate(localtime=1)
@@ -38,12 +38,13 @@ def send_mail(to, subject, content, is_cc=False):
     smtp.quit()
 
 
-def async_send_approved_email(to_list, subject, data, e_type):
+def async_send_approved_email(to_list, subject, data, e_type=None):
     """
     gevent协程异步发送邮件
     :param to_list: 列表类型[[uid,email], [uid,email], [uid,email]]
     :param subject: 邮件主题
     :param data:  邮件内容
+    :param is_cc:  是否抄送ops
     :param e_type: 邮件类型 例如 审批等等
     :return:
     """
@@ -191,6 +192,10 @@ def async_send_approved_email(to_list, subject, data, e_type):
 </body></html>""".format(data["id"], data['create_user'], data['create_time'], data["team_name"], data["test_user"],
                          data["deploy_time"], data["sql_info"], data["comment"],
                          Config.EMAIL_CONFIRM_PREFIX, generate_confirm_email_token(to[0], data["id"]), subject)
+
+        else:
+            send_mail(to[1], subject, data, is_cc=True)
+            continue
         send_mail(to[1], subject, html, is_cc=False)
 
 

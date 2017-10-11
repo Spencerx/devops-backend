@@ -50,7 +50,6 @@ def consume_email():
             e_type = task['e_type']
         except Exception, e:
             logging.error("email args may has exceptions,message: {0}".format(e.message))  # args exception
-            pass
         else:
             logging.info("to:{0} subject:{1}".format(str(to_list), subject))
             async_send_approved_email(to_list, subject, data, int(e_type))

@@ -438,6 +438,16 @@ def sure_deploy():
             w.ops_user = uid
             try:
                 w.save()
+
+                # 部署完成 邮件通知相关测试和工作流创建者
+                to_list = []
+                create_user = Users.select().where(Users.id == int(w.create_user)).get()
+                test_user = Users.select().where(Users.id == int(w.test_user)).get()
+                to_list.append(['', create_user.email])
+                to_list.append(['', test_user.email])
+                r = create_redis_connection()
+                r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
+                                                'data': "工作流ID: {0} 部署完成, 等待测试确认".format(w_id), 'e_type': 100})
                 return response_json(200, '', '')
             except Exception, e:
                 return response_json(500, e, '')

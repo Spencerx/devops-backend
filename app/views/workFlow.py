@@ -156,10 +156,11 @@ def create_workflow():
             # 部署date
             deploy_date = datetime.datetime.strptime(form_data['deploy_date'], utc_format). \
                 strftime('%Y-%m-%d')
+            deploy_date = datetime.datetime.strptime(deploy_date, '%Y-%m-%d') + datetime.timedelta(days=1)
             # 部署time
             deploy_time = form_data['deploy_time']
             # 发布时间 time+date
-            deploy_order_time = deploy_date + " " + deploy_time
+            deploy_order_time = datetime.datetime.strftime(deploy_date, "%Y-%m-%d") + " " + deploy_time
             comment = form_data['comment']
             deploy_info = form_data['deploy_info']
             config = form_data['config']
@@ -210,10 +211,11 @@ def create_workflow():
             # 部署date
             deploy_date = datetime.datetime.strptime(form_data['deploy_date'], utc_format). \
                 strftime('%Y-%m-%d')
+            deploy_date = datetime.datetime.strptime(deploy_date, '%Y-%m-%d') + datetime.timedelta(days=1)
             # 部署time
             deploy_time = form_data['deploy_time']
             # 发布时间 time+date
-            deploy_order_time = deploy_date + " " + deploy_time
+            deploy_order_time = datetime.datetime.strftime(deploy_date, "%Y-%m-%d") + " " + deploy_time
             create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             w = Workflow(create_time=create_time, test_user=test_user, type=flow_type, dev_user=dev_user,
                          sql_info=sql_info, team_name=team_name, comment=comment, create_user=create_user,
@@ -247,10 +249,11 @@ def create_workflow():
             # 部署date
             deploy_date = datetime.datetime.strptime(form_data['deploy_date'], utc_format). \
                 strftime('%Y-%m-%d')
+            deploy_date = datetime.datetime.strptime(deploy_date, '%Y-%m-%d') + datetime.timedelta(days=1)
             # 部署time
             deploy_time = form_data['deploy_time']
             # 发布时间 time+date
-            deploy_order_time = deploy_date + " " + deploy_time
+            deploy_order_time = datetime.datetime.strftime(deploy_date, "%Y-%m-%d") + " " + deploy_time
             create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             w = Workflow(create_time=create_time, test_user=test_user, type=flow_type,
                          config=config_info, team_name=team_name, comment=comment, create_user=create_user,

@@ -357,7 +357,10 @@ def approved_flow():
         suggestion = json_data['suggestion']
         uid = json_data['uid']
         w_id = json_data['w_id']
-        w = Workflow.select().where(Workflow.w == w_id).get()
+        try:
+            w = Workflow.select().where(Workflow.w == w_id).get()
+        except Exception, e:
+            return response_json(500, u'工作流不存在', '')
         if approved == "access":
             if int(w.status) != 1:
                 return response_json(301, '', u'工作流状态检测到已经被改变')

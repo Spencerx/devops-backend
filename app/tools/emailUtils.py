@@ -189,7 +189,7 @@ def async_send_approved_email(to_list, subject, data, e_type=None):
   </tbody>
 </table>
 <div>
-</body></html>""".format(data["id"], data['create_user'], data['create_time'], data["team_name"], data["test_user"],
+</body></html>""".format(data["id"], data['create_time'], data['create_user'], data["team_name"], data["test_user"],
                          data["deploy_time"], data["sql_info"], data["comment"],
                          Config.EMAIL_CONFIRM_PREFIX, generate_confirm_email_token(to[0], data["id"]), subject)
 

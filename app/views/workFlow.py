@@ -504,8 +504,8 @@ def sure_test():
                 # 邮件通知与工作流相关的人员
                 to_list = []
                 create_user = Users.select().where(Users.id == int(w.create_user)).get()
-                test_user = Users.select().where(Users.id == int(w.test_use))
-                dev_user = Users.select().where(Users.id == int(w.dev_user))
+                test_user = Users.select().where(Users.id == int(w.test_user)).get()
+                dev_user = Users.select().where(Users.id == int(w.dev_user)).get()
                 to_list.append(['', create_user.email])
                 to_list.append(['', test_user.email])
                 to_list.append(['', dev_user.email])

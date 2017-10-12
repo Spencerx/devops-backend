@@ -12,6 +12,7 @@ from app.models.services import Services
 from app.models.users import Users
 from app.models.roles import Roles
 from app.tools.jsonUtils import response_json
+from app.tools.redisUtils import create_redis_connection
 from app.tools.emailUtils import decrypt_email_token
 
 common = Blueprint('common',__name__)
@@ -213,6 +214,14 @@ def confirm():
                     w.save()
                     current_app.logger.info("one key approve flow {0} success".format(str(wid)))
                     data.append({'id': wid, "result": u'审批成功'})
+            # 审核完成 邮件通知工作流创建者和运维
+            to_list = []
+            create_user = Users.select().where(Users.id == int(w.create_user)).get()
+            to_list.append(['', create_user.email])
+            r = create_redis_connection()
+            r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
+                                            'data': "工作流ID: {0} 审核完成, 等待运维部署".format(data['w_id']), 'e_type': 100})
+
             html_header = u"<table><tr><th>工作流ID</th><th>快速审批结果</th></tr>"
             html_footer = u"</table>"
             html_body = ""

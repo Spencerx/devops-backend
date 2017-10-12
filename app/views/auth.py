@@ -117,15 +117,15 @@ def register():
     json_data = request.get_json()
     username = json_data['username']
     # 中文名
-    name = json_data['name']
-    password = json_data['password']
+    name = str(json_data['name']).strip()
+    password = str(json_data['password']).strip()
     role = json_data['role']
-    email = json_data['email']
+    email = str(json_data['email']).strip()
     create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     is_active = "0"
     is_exist = Users.select().where(Users.username == username).count()
     if is_exist > 0:
-        current_app.logger.warn('user {0} has been reegisted'.format(username))
+        current_app.logger.warn('user {0} has been registed'.format(username))
         return response_json(500, u'该账号已被注册', '')
     else:
         res = varify_passwd(username, password)

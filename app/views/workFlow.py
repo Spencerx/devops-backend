@@ -156,6 +156,7 @@ def create_workflow():
             # 部署date
             deploy_date = datetime.datetime.strptime(form_data['deploy_date'], utc_format). \
                 strftime('%Y-%m-%d')
+            # 这里有bug deoloy_date 是last day 所以加 one day 原因未知
             deploy_date = datetime.datetime.strptime(deploy_date, '%Y-%m-%d') + datetime.timedelta(days=1)
             # 部署time
             deploy_time = form_data['deploy_time']
@@ -514,8 +515,12 @@ def sure_test():
                 create_user = Users.select().where(Users.id == int(w.create_user)).get()
                 test_user = Users.select().where(Users.id == int(w.test_user)).get()
                 dev_user = Users.select().where(Users.id == int(w.dev_user)).get()
-                to_list.append(['', create_user.email])
-                to_list.append(['', test_user.email])
+                # 判断创建人和测试人是否为同一个 一般都是同一个
+                if create_user.email == test_user.email:
+                    to_list.append(['', create_user.email])
+                else:
+                    to_list.append(['', create_user.email])
+                    to_list.append(['', test_user.email])
                 to_list.append(['', dev_user.email])
                 to_list.append(['', 'ops@haixue.com'])
                 r = create_redis_connection()

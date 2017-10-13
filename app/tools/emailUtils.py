@@ -14,7 +14,7 @@ else:
     from ..private_config import DevConfig as Config
 
 
-def send_mail(to, subject, content, is_cc=False):
+def send_mail(to, subject, content):
     """
        发送邮件接口
        :param to: 邮件接收人
@@ -25,8 +25,6 @@ def send_mail(to, subject, content, is_cc=False):
        """
     msg = MIMEText(content, _subtype='html', _charset='utf-8')
     msg['To'] = to
-    if is_cc:
-        msg['Cc'] = 'ops@haixue.com'
     msg['From'] = Config.MAIL_ACCOUNT
     msg['Subject'] = subject
     msg['Date'] = formatdate(localtime=1)
@@ -38,7 +36,7 @@ def send_mail(to, subject, content, is_cc=False):
     smtp.quit()
 
 
-def async_send_approved_email(to_list, subject, data, e_type=None):
+def async_send_approved_email(to_list, subject, data, e_type=100):
     """
     gevent协程异步发送邮件
     :param to_list: 列表类型[[uid,email], [uid,email], [uid,email]]
@@ -52,151 +50,168 @@ def async_send_approved_email(to_list, subject, data, e_type=None):
         # 系统上线邮件
         if e_type == 1:
             html = """
-        <html><body>
-        <div>
-                <h1>{14}</h1>
-<h3>请到运维平台完成审批或点击快速审批按钮完成一键快速审批</h3>
-<button style="background-color: deepskyblue"><a href="{13}?token={12}" style="text-decoration: none">一键快速审批</a></button>
-</div>
-<div style="margin-top: 1%">
-<table style="width: 550px"  border="0" cellpadding="13" cellspacing="1">
-  <thead>
-  <tr>
-    <td style="background-color: lightgrey">工作流ID</td>
-    <td style="background-color: lightgrey">{0}</td>
-  </tr>
-
-  <tr>
-    <td style="background-color: lightgrey">团队</td>
-    <td style="background-color: lightgrey">{1}</td>
-  </tr>
-
-  <tr>
-    <td style="background-color: lightgrey">服务名</td>
-    <td style="background-color: lightgrey">{2}</td>
-  </tr>
-
-  <tr>
-    <td style="background-color: lightgrey">版本</td>
-    <td style="background-color: lightgrey">{3}</td>
-  </tr>
-
-  <tr>
-    <td style="background-color: lightgrey">开发负责人</td>
-    <td style="background-color: lightgrey">{4}</td>
-  </tr>
-
-  <tr>
-    <td  style="background-color: lightgrey">测试负责人</td>
-    <td style="background-color: lightgrey">{5}</td>
-  </tr>
-
-  <tr>
-    <td style="background-color: lightgrey">产品负责人</td>
-    <td style="background-color: lightgrey">{6}</td>
-  </tr>
-
-  <tr>
-    <td style="background-color: lightgrey">创建时间</td>
-    <td style="background-color: lightgrey">{7}</td>
-  </tr>
-  
-  <tr>
-    <td style="background-color: lightgrey">发布时间</td>
-    <td style="background-color: lightgrey">{15}</td>
-  </tr>
-
-  <tr>
-    <td style="background-color: lightgrey">SQL</td>
-    <td style="background-color: lightgrey">{8}</td>
-  </tr>
-  
-   <tr>
-    <td style="background-color: lightgrey">配置变更</td>
-    <td style="background-color: lightgrey">{9}</td>
-  </tr>
-
-  <tr>
-    <td style="background-color: lightgrey">上线详情</td>
-    <td style="background-color: lightgrey">{10}</td>
-  </tr>
-
-  <tr>
-    <td style="background-color: lightgrey">备注</td>
-    <td style="background-color: lightgrey">{11}</td>
-  </tr>
-  </tbody>
-</table>
-<div>
-</body></html>      
-        """.format(data["id"], data["team_name"], data["service"], data["version"],
-                   data["dev_user"], data["test_user"], data["production_user"], data["create_time"], data["sql_info"],
-                   data["config"], data['deploy_info'], data["comment"],
-                   generate_confirm_email_token(to[0], data["id"]), Config.EMAIL_CONFIRM_PREFIX,
-                   subject, data["deploy_time"])
+            <html>
+            <head>
+            </head>
+            <body>
+            <div>
+              <h1>{14}</h1>
+              <h3>请到运维平台完成审批或点击快速审批按钮完成一键快速审批</h3>
+              <button style="background-color: deepskyblue"><a href="{13}?token={12}" style="text-decoration: none">一键快速审批</a></button>
+            </div>
+            <div style="margin-top: 1%">
+              <table class="tb" border="0" cellpadding="12" cellspacing="2" style="width: 60%;
+                  background-color: #f8f8f9;
+                  border-top: 1px solid #E0E0E0;
+                  border-left: 1px solid #E0E0E0;">
+                <thead>
+                <tr>
+                  <th style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;width: 30%">工作流ID</th>
+                  <th style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;"> {0} </th>
+                </tr>
+                </thead>
+                <tbody>
+            
+                <tr>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">团队</td>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{1}</td>
+                </tr>
+            
+                <tr>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">服务名</td>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{2}</td>
+                </tr>
+            
+                <tr>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">版本</td>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{3}</td>
+                </tr>
+            
+                <tr>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">开发负责人</td>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{4}</td>
+                </tr>
+            
+                <tr>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">测试负责人</td>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{5}</td>
+                </tr>
+            
+                <tr>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">产品负责人</td>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{6}</td>
+                </tr>
+            
+                <tr>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">创建时间</td>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{7}</td>
+                </tr>
+            
+                <tr>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">发布时间</td>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{15}</td>
+                </tr>
+            
+                <tr>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">SQL</td>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{8}</td>
+                </tr>
+            
+                <tr>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">配置变更</td>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{9}</td>
+                </tr>
+            
+                <tr>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">上线详情</td>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{10}</td>
+                </tr>
+            
+                <tr>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">备注</td>
+                  <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{11}</td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+            </body>
+            </html>""".format(data["id"], data["team_name"], data["service"], data["version"],
+                              data["dev_user"], data["test_user"], data["production_user"],
+                              data["create_time"], data["sql_info"],
+                              data["config"], data['deploy_info'], data["comment"],
+                              generate_confirm_email_token(to[0], data["id"]), Config.EMAIL_CONFIRM_PREFIX,
+                              subject, data["deploy_time"])
 
         # 数据库变更邮件
         elif e_type == 2:
             html = """
-        <html><body>
-        <div>
-                <h1>{10}</h1>
-<h3>请到运维平台完成审批或点击快速审批按钮完成一键快速审批</h3>
-<button style="background-color: deepskyblue"><a href="{8}?token={9}" style="text-decoration: none">一键快速审批</a></button>
-</div>
-<div style="margin-top: 1%">
-<table style="width: 550px"  border="0" cellpadding="13" cellspacing="1">
-  <thead>
-  <tr>
-    <td style="background-color: lightgrey">工作流ID</td>
-    <td style="background-color: lightgrey">{0}</td>
-  </tr>
-
-  <tr>
-    <td style="background-color: lightgrey">创建时间</td>
-    <td style="background-color: lightgrey">{1}</td>
-  </tr>
-
-  <tr>
-    <td style="background-color: lightgrey">创建人</td>
-    <td style="background-color: lightgrey">{2}</td>
-  </tr>
-  
-  <tr>
-    <td style="background-color: lightgrey">团队</td>
-    <td style="background-color: lightgrey">{3}</td>
-  </tr>
-
-  <tr>
-    <td style="background-color: lightgrey">测试负责人</td>
-    <td style="background-color: lightgrey">{4}</td>
-  </tr>
-
-  <tr>
-    <td style="background-color: lightgrey">部署时间</td>
-    <td style="background-color: lightgrey">{5}</td>
-  </tr>
-  
-   <tr>
-    <td style="background-color: lightgrey">配置变更详情</td>
-    <td style="background-color: lightgrey">{6}</td>
-  </tr>
-
-  <tr>
-    <td style="background-color: lightgrey">备至</td>
-    <td style="background-color: lightgrey">{7}</td>
-  </tr>
-  </tbody>
-</table>
-<div>
-</body></html>""".format(data["id"], data['create_time'], data['create_user'], data["team_name"], data["test_user"],
-                         data["deploy_time"], data["sql_info"], data["comment"],
-                         Config.EMAIL_CONFIRM_PREFIX, generate_confirm_email_token(to[0], data["id"]), subject)
+                            <html><body>
+                <div>
+                  <h1>{10}</h1>
+                  <h3>请到运维平台完成审批或点击快速审批按钮完成一键快速审批</h3>
+                  <button style="background-color: deepskyblue"><a href="{8}?token={9}" style="text-decoration: none">一键快速审批</a></button>
+                </div>
+                
+                <div style="margin-top: 1%">
+                  <table class="tb" border="0" cellpadding="12" cellspacing="2" style="width: 60%;
+                      background-color: #f8f8f9;
+                      border-top: 1px solid #E0E0E0;
+                      border-left: 1px solid #E0E0E0;">
+                    <thead>
+                    <tr>
+                      <th style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;width: 20%">工作流ID</th>
+                      <th style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{0}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                
+                    <tr>
+                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">创建时间</td>
+                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{1}</td>
+                    </tr>
+                
+                    <tr>
+                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">创建人</td>
+                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{2}</td>
+                    </tr>
+                
+                    <tr>
+                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">团队</td>
+                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{3}</td>
+                    </tr>
+                
+                    <tr>
+                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">测试负责人</td>
+                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{4}</td>
+                    </tr>
+                
+                    <tr>
+                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">部署时间</td>
+                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{5}</td>
+                    </tr>
+                
+                    <tr>
+                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">配置变更详情</td>
+                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{6}</td>
+                    </tr>
+                
+                    <tr>
+                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">备至</td>
+                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{7}</td>
+                    </tr>
+                    </tbody>
+                  </table>
+                  </div>
+                  </body>
+                </html>""".format(data["id"], data['create_time'], data['create_user'],
+                                  data["team_name"], data["test_user"],
+                                  data["deploy_time"], data["sql_info"], data["comment"],
+                                  Config.EMAIL_CONFIRM_PREFIX, generate_confirm_email_token(to[0], data["id"]), subject)
 
         else:
-            send_mail(to[1], subject, data, is_cc=True)
+            send_mail(to[1], subject, data)
             continue
-        send_mail(to[1], subject, html, is_cc=True)
+        send_mail(to[1], subject, html)
 
 
 def async_send_closeflow_email(to_list, subject, data, e_type):

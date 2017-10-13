@@ -373,6 +373,7 @@ def approved_flow():
             to_list = []
             create_user = Users.select().where(Users.id == int(w.create_user)).get()
             to_list.append(['', create_user.email])
+            to_list.append(['', 'ops@haixue.com'])
             r = create_redis_connection()
             r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
                                             'data': "工作流ID: {0} 审核完成, 等待运维部署".format(w_id), 'e_type': 100})
@@ -494,6 +495,7 @@ def sure_test():
             to_list.append(['', create_user.email])
             to_list.append(['', test_user.email])
             to_list.append(['', dev_user.email])
+            to_list.append(['', 'ops@haixue.com'])
             r = create_redis_connection()
             r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
                                             'data': "工作流ID: {0} 测试发现异常, 异常信息{1}".
@@ -515,6 +517,7 @@ def sure_test():
                 to_list.append(['', create_user.email])
                 to_list.append(['', test_user.email])
                 to_list.append(['', dev_user.email])
+                to_list.append(['', 'ops@haixue.com'])
                 r = create_redis_connection()
                 r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
                                                 'data': "工作流ID: {0} 测试确认部署完成,工作流关闭)".format(w_id), 'e_type': 100})

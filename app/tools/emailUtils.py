@@ -20,7 +20,6 @@ def send_mail(to, subject, content):
        :param to: 邮件接收人
        :param subject: 邮件主题
        :param content: 邮件主题正文
-       :param is_cc:是否抄送ops
        :return:
        """
     msg = MIMEText(content, _subtype='html', _charset='utf-8')

@@ -23,7 +23,11 @@ def status_code_count():
              "size": 200}
     scanresp = helpers.scan(es, _body, scroll="10m", index=_index, timeout="10m")
     for resp in scanresp:
-        if status_res.has_key(resp['_source']['status']):
+        try:
+            staus_code = resp['_source']['status']
+        except Exception,e:
+            continue
+        if status_res.has_key(staus_code):
             try:
                 status_res[resp['_source']['status']] += 1
             except Exception, e:

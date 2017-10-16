@@ -24,7 +24,10 @@ def status_code_count():
     scanresp = helpers.scan(es, _body, scroll="10m", index=_index, timeout="10m")
     for resp in scanresp:
         if status_res.has_key(resp['_source']['status']):
-            status_res[resp['_source']['status']] += 1
+            try:
+                status_res[resp['_source']['status']] += 1
+            except Exception, e:
+                continue
         else:
             status_res[resp['_source']['status']] = 1
     return response_json(200, '', status_res)
@@ -45,8 +48,10 @@ def nginx_pv_count():
              "size": 200}
     scanresp = helpers.scan(es, _body, scroll="10m", index=_index, timeout="10m")
     for resp in scanresp:
-        print resp
-        url_split = resp['_source']['request'].split()[1].split("/")
+        try:
+            url_split = resp['_source']['request'].split()[1].split("/")
+        except Exception,e:
+            continue
         product_name = url_split[1] if url_split[1] else "/"
         if pv_res.has_key(product_name):
             pv_res[product_name] += 1

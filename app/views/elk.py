@@ -56,7 +56,7 @@ def nginx_pv_count():
             url_split = resp['_source']['request'].split()[1].split("/")
         except Exception,e:
             continue
-        product_name = url_split[1] if url_split[1] else "/"
+        product_name = url_split[1].split('?')[0] if url_split[1] else "/"
         if pv_res.has_key(product_name):
             pv_res[product_name] += 1
         else:

@@ -17,7 +17,7 @@ def status_code_count():
     count_date = datetime.datetime.now().strftime('%Y.%m.%d')
     es = init_es_connection()
     status_res = {}
-    _index = "k8s-nginx-access-{0}".format(count_date)
+    _index = "nginx-accesslog-2017.10.16".format(count_date)
     _body = {"query": {"match_all": {}},
              "sort": [{"@timestamp": 'desc'}],
              "size": 200}
@@ -39,7 +39,7 @@ def nginx_pv_count():
     count_date = datetime.datetime.now().strftime('%Y.%m.%d')
     es = init_es_connection()
     pv_res = {}
-    _index = "nginx-accesslog-{0}".format(count_date)
+    _index = "nginx-accesslog-2017.10.16".format(count_date)
     _body = {"query": {"match_all": {}},
              "sort": [{"@timestamp": 'desc'}],
              "size": 200}

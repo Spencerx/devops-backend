@@ -61,4 +61,5 @@ def nginx_pv_count():
             pv_res[product_name] += 1
         else:
             pv_res[product_name] = 1
+        pv_res = dict(sorted(pv_res.items(), key=lambda d: d[1], reverse=True)[0:10:])
     return response_json(200, '', pv_res)

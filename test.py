@@ -45,6 +45,17 @@ for item in res:
 
 import nginx
 
+import pytz
+import datetime
+utc_time_str=u"2015-07-31T00:00:00Z"
+utc_format='%Y-%m-%dT%H:%M:%SZ'
+local_tz = pytz.timezone('Asia/Chongqing')
+local_format = "%Y-%m-%d %H:%M"
+utc_dt = datetime.datetime.strptime(utc_time_str, utc_format)
+local_dt = utc_dt.replace(tzinfo=pytz.utc).astimezone(local_tz)
+time_str = local_dt.strftime(local_format)
+print time_str
+
 
 
 

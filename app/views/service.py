@@ -131,7 +131,7 @@ def active_delete_servie():
 @manager_required
 def switch_flow_on():
     """
-    服务上线 nginx upstream开启对应的backend的流量
+    放流 nginx upstream开启对应的backend的流量
     :return:
     """
     if request.method == "POST":
@@ -161,7 +161,7 @@ def switch_flow_on():
 @manager_required
 def switch_flow_off():
     """
-    服务上线 nginx upstream关闭对应的backend的流量
+    关流 nginx upstream关闭对应的backend的流量
     :return:
     """
     if request.method == "POST":
@@ -184,7 +184,7 @@ def switch_flow_off():
             return response_json(500, u'consul api time out')
 
     else:
-        pass
+        return response_json(200, '', '')
 
 
 @service.route('/upstream/switch_flow_double_weight', methods=['POST'])
@@ -195,9 +195,28 @@ def switch_flow_double_weight():
     :return:
     """
     if request.method == "POST":
-        pass
+        json_data = request.get_json()
+        try:
+            service_name = json_data['service']
+            ip = json_data['row']['ip']
+            port = str(json_data['row']['port'])
+            attribute = json_data['row']['attribute']
+            if int(attribute['weight']) == 1 or int(attribute['weight']) == 2:
+                attribute['weight'] = int(attribute['weight'])*2
+            else:
+                return response_json(500, u'权重已经为最高', '')
+            attribute = JSONEncoder().encode(attribute)
+            r = requests.put(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
+                                     format(service_name, ip + ":" + port)), data=str(attribute))
+            if r.status_code == 200:
+                return response_json(200, '', u'倍权成功')
+            else:
+                return response_json(500, u'倍权失败', '')
+        except Timeout, e:
+            current_app.logger.error(e)
+            return response_json(500, u'consul api time out')
     else:
-        pass
+        return response_json(200, '', '')
 
 
 @service.route('/upstream/switch_flow_half_weight', methods=['POST'])
@@ -208,9 +227,28 @@ def switch_flow_half_weight():
     :return:
     """
     if request.method == "POST":
-        pass
+        json_data = request.get_json()
+        try:
+            service_name = json_data['service']
+            ip = json_data['row']['ip']
+            port = str(json_data['row']['port'])
+            attribute = json_data['row']['attribute']
+            if int(attribute['weight']) == 2 or int(attribute['weight']) == 4:
+                attribute['weight'] = int(attribute['weight'])/2
+            else:
+                return response_json(500, u'权重已经为最低', '')
+            attribute = JSONEncoder().encode(attribute)
+            r = requests.put(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
+                                     format(service_name, ip + ":" + port)), data=str(attribute))
+            if r.status_code == 200:
+                return response_json(200, '', u'半权成功')
+            else:
+                return response_json(500, u'半权失败', '')
+        except Timeout, e:
+            current_app.logger.error(e)
+            return response_json(500, u'consul api time out')
     else:
-        pass
+        return response_json(200, '', '')
 
 
 @service.route('/all_backend_info')

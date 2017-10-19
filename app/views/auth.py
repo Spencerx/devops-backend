@@ -37,14 +37,10 @@ def login():
 
         # 预先判断账户是否为锁定用户
         r = create_redis_connection()
-        current_limit_key = r.get('login_retry_limit_{0}'.format(username))
-        if current_limit_key == "3":
-            if not r.ttl(current_limit_key):
-                r.setex(current_limit_key, "3", 60 * 60 * 60 * 1)
-                return response_json(500, u'该账户多次登陆验证失败,已被锁定1小时！', data='')
-            else:
-                return response_json(500, u'该账户多次登陆验证失败,已被锁定 剩余等待时长: {0} s'.
-                                     format(r.ttl(current_limit_key)), data='')
+        limit_login_key = 'login_retry_limit_{0}'.format(username)  # redis lock key
+        current_limit_count = r.get('login_retry_limit_{0}'.format(username))  # lock count
+        if current_limit_count == "3":
+            return response_json(500, u'该账户多次登陆验证失败,已被锁定 剩余等待时长: {0} s'.format(r.ttl(limit_login_key)), data='')
 
         # 在end服务中验证账户密码
         res = varify_passwd(username, password)
@@ -53,9 +49,13 @@ def login():
             return response_json(500, u'用户不存在', data='')
         elif res['status'] == 200 and not res['result']:
             """redis 验证记录失败登陆次数 超过三次 该账号锁定1小时"""
-            current_app.logger.warn('user {0} password is no correct'.format(username))
-            r.incr('login_retry_limit_{0}'.format(username))
-            return response_json(500, u'密码错误', data='')
+            if current_limit_count == "2":
+                current_app.logger.warn('user {0} has been locked'.format(username))
+                r.setex(limit_login_key, "3", 60 * 60 * 1)
+                return response_json(500, u'账户被锁定一小时,请联系运维', data='')
+            else:
+                r.incr(limit_login_key)
+                return response_json(500, u'密码错误', data='')
 
         else:
             is_register = Users.select().where(Users.username == username).count()
@@ -64,7 +64,7 @@ def login():
                 u = Users.select().where(Users.username == username).get()
                 if int(u.is_active) == 1:
                     # 删除登陆密码错误次数限制
-                    r.delete(current_limit_key)
+                    r.delete(limit_login_key)
                     token_in_redis = r.get(username)
                     # 通过redis是否存在token来判断是否重新生成token 实现同一个账户多端登陆 如果每次都生成token会导致多客户端登陆挤掉上次的客户端
                     if token_in_redis:

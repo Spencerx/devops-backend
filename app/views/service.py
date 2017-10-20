@@ -27,7 +27,7 @@ def service_list():
             if request.args.get("is_filter_disactived", None):
                 services = Services.select().where(Services.service_status == 1)
             else:
-                services = Services.select()
+                services = Services.select().order_by(Services.service_status.desc())
             data = []
             for s in services:
                 per_team = {
@@ -87,6 +87,7 @@ def update_service():
         comment = json_data['comment']
         language = json_data['language']
         is_switch_flow = json_data['is_switch_flow']
+        is_active = json_data['is_active']
         try:
             s = Services.select().where(Services.s == int(service_id)).get()
             s.service_name = service_name
@@ -95,30 +96,7 @@ def update_service():
             s.type = service_type
             s.language = language
             s.is_switch_flow = 1 if is_switch_flow else 2
-            s.save()
-            return response_json(200, '', 'modify service success')
-        except Exception, e:
-            return response_json(500, e, '')
-    else:
-        return response_json(200, '', '')
-
-
-@service.route('/active_delete_service', methods=['POST'])
-def active_delete_servie():
-    """
-    禁用或者激活服务配置接口
-    :return:
-    """
-    if request.method == "POST":
-        json_data = request.get_json()
-        service_id = json_data['s_id']
-        try:
-            s = Services.select().where(Services.s == int(service_id)).get()
-            current_status = s.service_status
-            if int(current_status) == 1:
-                s.service_status = '0'
-            else:
-                s.service_status = '1'
+            s.service_status = "1" if is_active else "0"
             s.save()
             return response_json(200, '', 'modify service success')
         except Exception, e:
@@ -273,4 +251,16 @@ def destined_registed_service_backend_info():
         return response_json(200, '', data=backends)
     else:
         response_json(200, '', '')
+
+
+@service.route('update_backend_server')
+def update_backend_server():
+    """
+    更新服务对应的后端机器列表
+    :return:
+    """
+    if request.method == "POST":
+        pass
+    else:
+        return response_json(200, '', '')
 

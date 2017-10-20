@@ -11,7 +11,7 @@ class BaseModel(Model):
 
 class Bugs(BaseModel):
     exception_info = CharField()
-    flow = PrimaryKeyField(db_column='flow_id')
+    flow = IntegerField(db_column='flow_id')
 
     class Meta:
         db_table = 'bugs'
@@ -29,10 +29,33 @@ class Roles(BaseModel):
     class Meta:
         db_table = 'roles'
 
+class Servers(BaseModel):
+    hostname = CharField(null=True)
+    internal_ip = CharField()
+    outernal_ip = CharField(null=True)
+    ssh_passwd = CharField()
+    ssh_port = IntegerField()
+    ssh_user = CharField()
+    type = CharField()
+
+    class Meta:
+        db_table = 'servers'
+
+class ServiceBackend(BaseModel):
+    comment = CharField(null=True)
+    port = IntegerField(null=True)
+    server = IntegerField(db_column='server_id', index=True, null=True)
+    service = IntegerField(db_column='service_id', index=True, null=True)
+    weight = IntegerField()
+
+    class Meta:
+        db_table = 'service_backend'
+
 class Services(BaseModel):
     comment = CharField(null=True)
     create_time = DateTimeField()
     current_version = CharField(null=True)
+    is_switch_flow = IntegerField()
     language = CharField(null=True)
     s = PrimaryKeyField(db_column='s_id')
     service_leader = IntegerField()
@@ -88,6 +111,7 @@ class Workflow(BaseModel):
     deploy_info = CharField(null=True)
     deploy_time = DateTimeField(null=True)
     dev_user = IntegerField(null=True)
+    is_except = IntegerField()
     last_version = CharField(null=True)
     ops_user = IntegerField(null=True)
     production_user = IntegerField(null=True)

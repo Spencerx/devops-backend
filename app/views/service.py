@@ -58,12 +58,14 @@ def create_service():
         service_name = json_data['service_name']
         service_leader = user_to_id(json_data['service_leader'])
         desc = json_data['desc']
+        uid = json_data['uid']
         language = json_data['language']
         s = Services(service_name=service_name, comment=desc, service_leader=service_leader,
                      create_time=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                      language=language, service_status='1')
         try:
             s.save()
+            current_app.logger.info("{0} create new service {1}".format(str(uid), service_name))
             return response_json(200, '', '')
         except Exception, e:
             return response_json(500, e, '')
@@ -88,6 +90,7 @@ def update_service():
         language = json_data['language']
         is_switch_flow = json_data['is_switch_flow']
         is_active = json_data['is_active']
+        uid = json_data['uid']
         try:
             s = Services.select().where(Services.s == int(service_id)).get()
             s.service_name = service_name
@@ -98,6 +101,7 @@ def update_service():
             s.is_switch_flow = 1 if is_switch_flow else 2
             s.service_status = "1" if is_active else "0"
             s.save()
+            current_app.logger.info("{0} update service {1}".format(str(uid), service_name))
             return response_json(200, '', 'modify service success')
         except Exception, e:
             return response_json(500, e, '')
@@ -117,6 +121,7 @@ def switch_flow_on():
         try:
             service_name = json_data['service']
             ip = json_data['row']['ip']
+            uid = json_data['uid']
             port = str(json_data['row']['port'])
             attribute = json_data['row']['attribute']
             attribute['down'] = 0
@@ -124,6 +129,7 @@ def switch_flow_on():
             r = requests.put(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
                                      format(service_name, ip+":"+port)), data=str(attribute))
             if r.status_code == 200:
+                current_app.logger.info("{0} open service {1} flow: {2}:{3}".format(str(uid), service_name, ip, port))
                 return response_json(200, '', u'开启流量成功')
             else:
                 return response_json(500, u'开启流量失败', '')
@@ -146,6 +152,7 @@ def switch_flow_off():
         json_data = request.get_json()
         try:
             service_name = json_data['service']
+            uid = json_data['uid']
             ip = json_data['row']['ip']
             port = str(json_data['row']['port'])
             attribute = json_data['row']['attribute']
@@ -154,6 +161,7 @@ def switch_flow_off():
             r = requests.put(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
                                      format(service_name, ip+":"+port)), data=str(attribute))
             if r.status_code == 200:
+                current_app.logger.info("{0} close service {1} flow: {2}:{3}".format(str(uid), service_name, ip, port))
                 return response_json(200, '', u'关闭流量成功')
             else:
                 return response_json(500, u'关闭流量失败', '')
@@ -176,6 +184,7 @@ def switch_flow_double_weight():
         json_data = request.get_json()
         try:
             service_name = json_data['service']
+            uid = json_data['uid']
             ip = json_data['row']['ip']
             port = str(json_data['row']['port'])
             attribute = json_data['row']['attribute']
@@ -187,6 +196,8 @@ def switch_flow_double_weight():
             r = requests.put(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
                                      format(service_name, ip + ":" + port)), data=str(attribute))
             if r.status_code == 200:
+                current_app.logger.info("{0} double service {1} flow: {2}:{3}".
+                                        format(str(uid), service_name, ip, port))
                 return response_json(200, '', u'倍权成功')
             else:
                 return response_json(500, u'倍权失败', '')
@@ -208,6 +219,7 @@ def switch_flow_half_weight():
         json_data = request.get_json()
         try:
             service_name = json_data['service']
+            uid = json_data['uid']
             ip = json_data['row']['ip']
             port = str(json_data['row']['port'])
             attribute = json_data['row']['attribute']
@@ -219,12 +231,82 @@ def switch_flow_half_weight():
             r = requests.put(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
                                      format(service_name, ip + ":" + port)), data=str(attribute))
             if r.status_code == 200:
+                current_app.logger.info("{0} half service {1} flow: {2}:{3}".
+                                        format(str(uid), service_name, ip, port))
                 return response_json(200, '', u'半权成功')
             else:
                 return response_json(500, u'半权失败', '')
         except Timeout, e:
             current_app.logger.error(e)
             return response_json(500, u'consul api time out')
+    else:
+        return response_json(200, '', '')
+
+
+@service.route("/upstream/scale_service_backend", methods=["POST", "OPTION"])
+@manager_required
+def scale_service_backend():
+    """
+    服务的upstream增加一个server
+    :return:
+    """
+    if request.method == "POST":
+        json_data = request.get_json()
+        service_name = json_data['service']
+        uid = json_data['uid']
+        ip = str(json_data['ip']).strip()
+        port = str(json_data['port']).strip()
+        attribute = {"down": 1, "fail_timeout": 10, "max_fails": 2, "weight": 2}
+        attribute = JSONEncoder().encode(attribute)
+        # check is exsist
+        try:
+            r = requests.get(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
+                                     format(service_name, ip + ":" + port)))
+            if r.status_code == 404:
+                try:
+                    r = requests.put(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
+                                             format(service_name, ip + ":" + port)), data=str(attribute))
+                    if r.status_code == 200:
+                        current_app.logger.info("{0} add service {1} flow: {2}:{3}".
+                                                format(str(uid), service_name, ip, port))
+                        return response_json(200, '', u'添加成功')
+                    else:
+                        return response_json(500, u'添加失败', '')
+                except Exception, e:
+                    return response_json(500, e, '')
+            else:
+                return response_json(500, u'backend已存在,请勿重复添加', '')
+        except Exception, e:
+            return response_json(500, e.message, '')
+    else:
+        return response_json(200, '', '')
+
+
+@service.route("/upstream/delete_service_backend", methods=["POST", "OPTION"])
+@manager_required
+def delete_service_backend():
+    """
+    删除upstream的一个server配置
+    :return:
+    """
+    if request.method == "POST":
+        json_data = request.get_json()
+        service_name = json_data['service']
+        uid = json_data['uid']
+        ip = str(json_data['ip']).strip()
+        port = str(json_data['port']).strip()
+        try:
+            r = requests.delete(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
+                                        format(service_name, ip + ":" + port)))
+            if r.status_code == 200:
+                current_app.logger.info("{0} delete service {1} flow: {2}:{3}".
+                                        format(str(uid), service_name, ip, port))
+                return response_json(200, '', u'删除成功')
+            else:
+                return response_json(500, u'删除失败', '')
+        except Exception, e:
+            return response_json(500, e.message, '')
+
     else:
         return response_json(200, '', '')
 
@@ -251,16 +333,3 @@ def destined_registed_service_backend_info():
         return response_json(200, '', data=backends)
     else:
         response_json(200, '', '')
-
-
-@service.route('update_backend_server')
-def update_backend_server():
-    """
-    更新服务对应的后端机器列表
-    :return:
-    """
-    if request.method == "POST":
-        pass
-    else:
-        return response_json(200, '', '')
-

@@ -21,10 +21,8 @@ def before_request():
                     if check_token_status(username, authorization):
                         pass
                     else:
-                        app.logger.error('token is expired')
                         abort(401, 'token is expired')
                 else:
-                    app.logger.error('token is invalidate')
                     abort(401, 'token is invalidate')
             else:
                 abort(401, 'no token in header')
@@ -33,11 +31,5 @@ def before_request():
         pass
 
 
-@app.after_request
-def after_request(response):
-    return response
-
-
 if __name__ == '__main__':
-    print app.config
     app.run(host=app.config.get('DEVOPS')['IP'], port=app.config.get('DEVOPS')['PORT'], threaded=True)

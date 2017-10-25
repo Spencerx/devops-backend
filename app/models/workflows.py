@@ -35,6 +35,7 @@ class Workflow(BaseModel):
     config = CharField()
     deny_info = CharField()
     access_info = CharField()
+    deploy_script_name = CharField(db_column="deploy_script_name")
     type = IntegerField()
     is_except = IntegerField()
 

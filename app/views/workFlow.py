@@ -7,7 +7,7 @@ from app.models.users import Users
 from app.models.flow_type import FlowType
 from app.models.services import Services
 from app.models.bugs import Bugs
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app
 from app.tools.jsonUtils import response_json
 from app.tools.redisUtils import create_redis_connection
 from app.tools.ormUtils import id_to_user, id_to_service, id_to_team, id_to_status, id_to_flow_type, \
@@ -374,7 +374,7 @@ def approved_flow():
             to_list = []
             create_user = Users.select().where(Users.id == int(w.create_user)).get()
             to_list.append(['', create_user.email])
-            to_list.append(['', 'ops@haixue.com'])
+            to_list.append(['', current_app.config["OPS_EMAIL"]])
             r = create_redis_connection()
             r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
                                             'data': "工作流ID: {0} 审核完成, 等待运维部署".format(w_id), 'e_type': 100})
@@ -496,7 +496,7 @@ def sure_test():
             to_list.append(['', create_user.email])
             to_list.append(['', test_user.email])
             to_list.append(['', dev_user.email])
-            to_list.append(['', 'ops@haixue.com'])
+            to_list.append(['', current_app.config["OPS_EMAIL"]])
             r = create_redis_connection()
             r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
                                             'data': "工作流ID: {0} 测试发现异常, 异常信息{1}".
@@ -522,7 +522,7 @@ def sure_test():
                     to_list.append(['', create_user.email])
                     to_list.append(['', test_user.email])
                 to_list.append(['', dev_user.email])
-                to_list.append(['', 'ops@haixue.com'])
+                to_list.append(['', current_app.config["OPS_EMAIL"]])
                 r = create_redis_connection()
                 r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
                                                 'data': "工作流ID: {0} 测试确认部署完成,工作流关闭)".format(w_id), 'e_type': 100})

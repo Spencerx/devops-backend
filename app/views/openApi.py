@@ -15,7 +15,7 @@ from app.tools.jsonUtils import response_json
 from app.tools.redisUtils import create_redis_connection
 from app.tools.emailUtils import decrypt_email_token
 
-common = Blueprint('common',__name__)
+common = Blueprint('common', __name__)
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -219,7 +219,7 @@ def confirm():
                     to_list = []
                     create_user = Users.select().where(Users.id == int(w.create_user)).get()
                     to_list.append(['', create_user.email])
-                    to_list.append(['', 'ops@haixue.com'])
+                    to_list.append(['', current_app.config["OPS_EMAIL"]])
                     r = create_redis_connection()
                     r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
                                                     'data': "工作流ID: {0} 审核完成, 等待运维部署".format(wid), 'e_type': 100})

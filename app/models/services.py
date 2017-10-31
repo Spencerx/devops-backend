@@ -21,6 +21,7 @@ class Services(BaseModel):
     language = CharField(null=True)
     service_status = CharField()
     service_leader = IntegerField()
+    deploy_script = IntegerField()
     create_time = DateTimeField()
     current_version = CharField(null=True)
     is_switch_flow = IntegerField(default=2)

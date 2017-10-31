@@ -19,6 +19,8 @@ blueprints = [
     ('app.views.service:service', '/api/v1/service'),
     ('app.views.elk:elk', '/api/v1/elk'),
     ('app.views.server:server', '/api/v1/server'),
+    ('app.views.deploy:deploy', '/api/v1/deploy'),
+    ('app.views.script:script', '/api/v1/script'),
 ]
 
 

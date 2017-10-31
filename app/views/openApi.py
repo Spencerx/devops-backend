@@ -14,6 +14,7 @@ from app.models.roles import Roles
 from app.tools.jsonUtils import response_json
 from app.tools.redisUtils import create_redis_connection
 from app.tools.emailUtils import decrypt_email_token
+from app.tools.ormUtils import id_to_service, id_to_user, id_to_team
 
 common = Blueprint('common', __name__)
 reload(sys)
@@ -193,7 +194,7 @@ def confirm():
         data = decrypt_email_token(token)
         if data:
             uid = int(data['uid'])
-            # 这里的工作流id可能不止一直 设计到多个flow的同时审批
+            # 这里的工作流id可能不止一直 涉及到多个flow的同时审批
             wids = str(data['w_id']).strip().split(" ")
             data = []
             for wid in wids:
@@ -221,8 +222,38 @@ def confirm():
                     to_list.append(['', create_user.email])
                     to_list.append(['', current_app.config["OPS_EMAIL"]])
                     r = create_redis_connection()
+                    e_type = 3 if int(w.type) == 1 else 4
+                    if e_type == 3:
+                        email_data = {
+                            "service": id_to_service(w.service),
+                            "version": w.current_version,
+                            "team_name": id_to_team(w.team_name),
+                            "dev_user": id_to_user(w.dev_user),
+                            "test_user": id_to_user(w.test_user),
+                            "create_user": id_to_user(w.create_user),
+                            "production_user": id_to_user(w.production_user),
+                            "sql_info": w.sql_info,
+                            "comment": w.comment,
+                            "create_time": w.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                            "deploy_info": w.deploy_info,
+                            "config": w.config,
+                            "id": wid,
+                            "deploy_time": w.deploy_time.strftime('%Y-%m-%d %H:%M:%S')
+                        }
+                    else:
+                        email_data = {
+                            "team_name": id_to_team(w.team_name),
+                            "test_user": id_to_user(w.test_user),
+                            "dev_user": id_to_user(w.dev_user),
+                            "config": w.config,
+                            "comment": w.comment,
+                            "create_time": w.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                            "deploy_time": w.deploy_time.strftime('%Y-%m-%d %H:%M:%S'),
+                            "id": wid,
+                        }
                     r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
-                                                    'data': "工作流ID: {0} 审核完成, 等待运维部署".format(wid), 'e_type': 100})
+                                                    'data': email_data, 'e_type': e_type,
+                                                    'title': '一键快速审批完成 等待运维部署'})
 
             html_header = u"<table><tr><th>工作流ID</th><th>快速审批结果</th></tr>"
             html_footer = u"</table>"

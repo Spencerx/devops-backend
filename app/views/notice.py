@@ -4,7 +4,7 @@
 import uuid
 import datetime
 from flask import Blueprint, current_app, request
-from app.tools.redisUtils import create_redis_connection
+from app.tools.connectpoolUtils import create_redis_connection
 from app.tools.jsonUtils import response_json
 
 notice = Blueprint('notice', __name__)

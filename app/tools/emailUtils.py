@@ -6,7 +6,7 @@ from email.mime.text import MIMEText
 from email.utils import formatdate
 from smtplib import SMTP
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from app.tools.templateUtils import approve_template, trace_flow_process_template
+from app.tools.templateUtils import approve_template
 env = os.environ.get('ads_env', 'dev')
 if env == 'prod':
     from ..private_config import ProdConfig as Config
@@ -35,120 +35,36 @@ def send_mail(to, subject, content):
     smtp.quit()
 
 
-def async_send_approved_email(to_list, subject, data, e_type=0, title=""):
+def async_send_flow_email(to_list, subject, data, title=""):
     """
     gevent协程异步发送邮件
     :param to_list: 列表类型[[uid,email], [uid,email], [uid,email]]
     :param subject: 邮件标题
     :param data:  邮件内容
     :param title:  内容主题
-    :param e_type: 邮件类型 例如 审批等等
     :return:
     """
     for to in to_list:
-        # 系统上线审批邮件
-        if e_type == 1:
-            html = approve_template(
-                e_type=e_type,
-                token=generate_confirm_email_token(to[0], data["id"]),
-                email_url=Config.EMAIL_CONFIRM_PREFIX,
-                id=data["id"],
-                team=data["team_name"],
-                service=data["service"],
-                version=data["version"],
-                dev_user=data["dev_user"],
-                test_user=data["test_user"],
-                production_user=data["production_user"],
-                create_time=data["create_time"],
-                create_user=data["create_user"],
-                sql_info=data["sql_info"],
-                config=data["config"],
-                deploy_info=data["deploy_info"],
-                comment=data["comment"],
-                deploy_time=data["deploy_time"],
-                title=title
-            )
-
-        # 数据库变更审批邮件
-        elif e_type == 2:
-            html = approve_template(
-                e_type=e_type,
-                id=data["id"],
-                create_time=data['create_time'],
-                create_user=data['create_user'],
-                team=data["team_name"],
-                test_user=data["test_user"],
-                deploy_time=data["deploy_time"],
-                sql_info=data["sql_info"],
-                comment=data["comment"],
-                email_url=Config.EMAIL_CONFIRM_PREFIX,
-                token=generate_confirm_email_token(to[0], data["id"]),
-                subject=subject,
-                title=title)
-
-        # 系统上线工作流实时跟踪通知邮件
-        elif e_type == 3:
-            html = trace_flow_process_template(
-                e_type=e_type,
-                id=data["id"],
-                team=data["team_name"],
-                service=data["service"],
-                version=data["version"],
-                dev_user=data["dev_user"],
-                test_user=data["test_user"],
-                production_user=data["production_user"],
-                create_time=data["create_time"],
-                create_user=data["create_user"],
-                sql_info=data["sql_info"],
-                config=data["config"],
-                deploy_info=data["deploy_info"],
-                comment=data["comment"],
-                deploy_time=data["deploy_time"],
-                title=title
-            )
-        elif e_type == 4:
-            html = trace_flow_process_template(
-                e_type=e_type,
-                id=data["id"],
-                create_time=data['create_time'],
-                create_user=data['create_user'],
-                team=data["team_name"],
-                test_user=data["test_user"],
-                deploy_time=data["deploy_time"],
-                sql_info=data["sql_info"],
-                comment=data["comment"],
-                email_url=Config.EMAIL_CONFIRM_PREFIX,
-                token=generate_confirm_email_token(to[0], data["id"]),
-                subject=subject,
-                title=title)
-        else:
-            send_mail(to[1], subject, data)
-            continue
+        html = approve_template(
+            token=generate_confirm_email_token(to[0], data["id"]) if data['approved'] else '',
+            email_url=Config.EMAIL_CONFIRM_PREFIX if data['approved'] else '',
+            id=data["id"],
+            team=data["team_name"],
+            service=data["service"],
+            version=data["version"],
+            dev_user=data["dev_user"],
+            test_user=data["test_user"],
+            production_user=data["production_user"],
+            create_time=data["create_time"],
+            create_user=data["create_user"],
+            sql_info=data["sql_info"],
+            config=data["config"],
+            deploy_info=data["deploy_info"],
+            comment=data["comment"],
+            deploy_time=data["deploy_time"],
+            title=title
+        )
         send_mail(to[1], subject, html)
-
-
-def async_send_closeflow_email(to_list, subject, data, e_type):
-    """
-    关闭工作流发送邮件
-    :param to_list:
-    :param subject:
-    :param data:
-    :param e_type: 1:正常关闭 2.驳回关闭 3.异常关闭
-    :return:
-    """
-    pass
-
-
-def notify_flow_to_deal(to_list, subject, data):
-    """
-    工作流到达通知处理
-    :param to_list:
-    :param subject:
-    :param data:
-    :return:
-    """
-    for to in to_list:
-        send_mail(to, subject, data, is_cc=True)
 
 
 def generate_confirm_email_token(uid, w_id):

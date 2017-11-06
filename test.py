@@ -1,21 +1,11 @@
 
-from jinja2 import Template
 
-def a(**kwargs):
-    print kwargs['name']
 
-def b(name, **kwargs):
-    t = Template("""
-    
-    hello,{{name}}
-    {%if type==1%}
-        {{ age}}
-    {% endif %}
-    {%if type==2%}
-    2
-    {% endif %}
-    
-    """)
-    return t.render(name=name, type=kwargs['type'])
-
-print b('bbb', type=1)
+import consul
+ret = {}
+try:
+    c = consul.Consul(host='192.168.15.255', port=8500, scheme='http')
+    res = c.kv.delete(key='upstreams/haixue_test/192.168.16.16:9090')
+    print res
+except Exception, e:
+    print e

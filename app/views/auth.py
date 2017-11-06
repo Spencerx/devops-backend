@@ -11,7 +11,7 @@ import datetime
 from flask import Blueprint, request, current_app
 from app.tools.saltUtils import generate_salt_token,exec_commands
 from app.tools.tokenUtils import generate_token, check_token_status
-from app.tools.redisUtils import create_redis_connection
+from app.tools.connectpoolUtils import create_redis_connection
 from app.tools.jsonUtils import response_json
 from app.tools.authUtils import varify_passwd
 from app.models.users import Users

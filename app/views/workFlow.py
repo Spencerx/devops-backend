@@ -9,10 +9,9 @@ from app.models.services import Services
 from app.models.bugs import Bugs
 from flask import Blueprint, request, current_app
 from app.tools.jsonUtils import response_json
-from app.tools.redisUtils import create_redis_connection
+from app.tools.connectpoolUtils import create_redis_connection
 from app.tools.ormUtils import id_to_user, id_to_service, id_to_team, id_to_status, id_to_flow_type, \
-    service_to_id, querylastversion_by_id, flow_type_to_id
-from app.tools.emailUtils import async_send_approved_email
+    service_to_id, querylastversion_by_id
 import gevent.monkey
 gevent.monkey.patch_all()
 
@@ -180,6 +179,7 @@ def create_workflow():
                 w_id = w.w
                 mail_ids = mail_ids + str(w_id) + " "  # 批量审批工作流的id字符串拼接值
             email_data = {
+                "approved": True,
                 "service": mail_services,
                 "version": mail_versions,
                 "team_name": id_to_team(team_name),
@@ -197,7 +197,7 @@ def create_workflow():
             }
             r = create_redis_connection()
             r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u'上线审批',
-                                            'data': email_data, 'e_type': 1, 'title': u'系统上线审批'})
+                                            'data': email_data, 'title': u'系统上线审批'})
             return response_json(200, '', 'create successful')
 
         # 数据库变更
@@ -225,19 +225,25 @@ def create_workflow():
             w_id = w.w
             mail_ids = mail_ids + str(w_id) + " "  # 批量审批工作流的id字符串拼接值
             email_data = {
+                "approved": True,
+                "service": '',
+                "version": '',
                 "team_name": id_to_team(team_name),
+                "dev_user": '',
                 "test_user": id_to_user(test_user),
                 "create_user": id_to_user(create_user),
+                "production_user": '',
                 "sql_info": sql_info,
                 "comment": comment,
                 "create_time": create_time,
-                "deploy_time": deploy_order_time,
+                "deploy_info": '',
+                "config": '',
                 "id": mail_ids,
-                'create_user': id_to_user(int(create_user))
+                "deploy_time": deploy_order_time,
             }
             r = create_redis_connection()
             r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u'数据库变更审批',
-                                            'data': email_data, 'e_type': 2, 'title': u'数据库变更审批'})
+                                            'data': email_data, 'title': u'数据库变更审批'})
             return response_json(200, '', 'create successful')
 
         # 配置变更
@@ -263,16 +269,25 @@ def create_workflow():
             w.save()
             w_id = w.w
             email_data = {
+                "approved": True,
+                "service": '',
+                "version": '',
                 "team_name": id_to_team(team_name),
-                "test_user": id_to_user(test_user),
                 "dev_user": id_to_user(dev_user),
-                "config": config_info,
+                "test_user": id_to_user(test_user),
+                "create_user": id_to_user(create_user),
+                "production_user": '',
+                "sql_info": '',
                 "comment": comment,
                 "create_time": create_time,
-                "deploy_time": deploy_order_time,
+                "deploy_info": '',
+                "config": '',
                 "id": w_id,
+                "deploy_time": deploy_order_time,
             }
-            async_send_approved_email(to_list, u"数据库变更审批", email_data, e_type=flow_type)
+            r = create_redis_connection()
+            r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u'配置变更审批',
+                                            'data': email_data, 'title': u'配置变更审批'})
             return response_json(200, '', 'ceate successful')
 
         # 权限申请
@@ -374,42 +389,29 @@ def approved_flow():
             # 审核完成 邮件通知工作流创建者和运维
             to_list = []
             create_user = Users.select().where(Users.id == int(w.create_user)).get()
-            e_type = 3 if int(w.type) == 1 else 4
-            if e_type == 3:
-                email_data = {
-                    "service": id_to_service(w.service),
-                    "version": w.current_version,
-                    "team_name": id_to_team(w.team_name),
-                    "dev_user": id_to_user(w.dev_user),
-                    "test_user": id_to_user(w.test_user),
-                    "create_user": id_to_user(w.create_user),
-                    "production_user": id_to_user(w.production_user),
-                    "sql_info": w.sql_info,
-                    "comment": w.comment,
-                    "create_time": w.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                    "deploy_info": w.deploy_info,
-                    "config": w.config,
-                    "id": w_id,
-                    "deploy_time": w.deploy_time.strftime('%Y-%m-%d %H:%M:%S')
-                }
-            else:
-                email_data = {
-                    "team_name": id_to_team(w.team_name),
-                    "test_user": id_to_user(w.test_user),
-                    "dev_user": id_to_user(w.dev_user),
-                    "create_user": id_to_user(w.create_user),
-                    "config": w.config,
-                    "sql_info": w.sql_info,
-                    "comment": w.comment,
-                    "create_time": w.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                    "deploy_time": w.deploy_time.strftime('%Y-%m-%d %H:%M:%S'),
-                    "id": w_id,
-                }
+            email_data = {
+                "approved": False,
+                "service": id_to_service(w.service),
+                "version": w.current_version,
+                "team_name": id_to_team(w.team_name),
+                "dev_user": id_to_user(w.dev_user),
+                "test_user": id_to_user(w.test_user),
+                "create_user": id_to_user(w.create_user),
+                "production_user": id_to_user(w.production_user),
+                "sql_info": w.sql_info,
+                "comment": w.comment,
+                "create_time": w.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                "deploy_info": w.deploy_info,
+                "config": w.config,
+                "id": w_id,
+                "deploy_time": w.deploy_time.strftime('%Y-%m-%d %H:%M:%S')
+            }
             to_list.append(['', create_user.email])
             to_list.append(['', current_app.config["OPS_EMAIL"]])
             r = create_redis_connection()
-            r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
-                                            'data': email_data, 'e_type': e_type,
+            r.rpush('email:consume:tasks', {'to_list': to_list,
+                                            'subject': u"工作流实时进度",
+                                            'data': email_data,
                                             'title': u'审核完成 等待运维部署'})
             return response_json(200, "", "")
         elif approved == "deny":
@@ -478,86 +480,47 @@ def sure_deploy():
         json_data = request.get_json()
         uid = json_data['uid']
         w_id = json_data['w_id']
-        flow_type_id = int(flow_type_to_id(json_data['flow_type']))
         w = Workflow.select().where(Workflow.w == w_id).get()
-        if flow_type_id == 1:
-            s = Services.select().where(Services.s == int(w.service)).get()
-            if int(w.status) != 2:
-                return response_json(301, '', u'工作流状态检测到已经被改变')
-            s.current_version = w.current_version  # 修改该服务的最新版本为当前上线版本
-            w.status = int(w.status) + 1
-            w.ops_user = uid
-            try:
-                w.save()
-                s.save()
-
-                # 部署完成 邮件通知相关测试和工作流创建者
-                to_list = []
-                create_user = Users.select().where(Users.id == int(w.create_user)).get()
-                test_user = Users.select().where(Users.id == int(w.test_user)).get()
-                to_list.append(['', create_user.email])
-                to_list.append(['', test_user.email])
-                r = create_redis_connection()
-                email_data = {
-                    "service": id_to_service(w.service),
-                    "version": w.current_version,
-                    "team_name": id_to_team(w.team_name),
-                    "dev_user": id_to_user(w.dev_user),
-                    "test_user": id_to_user(w.test_user),
-                    "create_user": id_to_user(w.create_user),
-                    "production_user": id_to_user(w.production_user),
-                    "sql_info": w.sql_info,
-                    "comment": w.comment,
-                    "create_time": w.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                    "deploy_info": w.deploy_info,
-                    "config": w.config,
-                    "id": w_id,
-                    "deploy_time": w.deploy_time.strftime('%Y-%m-%d %H:%M:%S')
-                }
-                r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
-                                                'data': email_data, 'e_type': 3,
-                                                'title': u'部署完成 等待测试确认'})
-                return response_json(200, '', '')
-            except Exception, e:
-                return response_json(500, e, '')
-        elif flow_type_id == 2 or flow_type_id == 3:
-            w = Workflow.select().where(Workflow.w == w_id).get()
-            if int(w.status) != 2:
-                return response_json(301, '', u'工作流状态检测到已经被改变')
-            w.status = int(w.status) + 1
-            w.ops_user = uid
-            try:
-                w.save()
-
-                # 部署完成 邮件通知相关测试和工作流创建者
-                to_list = []
-                create_user = Users.select().where(Users.id == int(w.create_user)).get()
-                test_user = Users.select().where(Users.id == int(w.test_user)).get()
-                to_list.append(['', create_user.email])
-                to_list.append(['', test_user.email])
-                r = create_redis_connection()
-                email_data = {
-                    "service": id_to_service(w.service),
-                    "version": w.current_version,
-                    "team_name": id_to_team(w.team_name),
-                    "dev_user": id_to_user(w.dev_user),
-                    "test_user": id_to_user(w.test_user),
-                    "create_user": id_to_user(w.create_user),
-                    "production_user": id_to_user(w.production_user),
-                    "sql_info": w.sql_info,
-                    "comment": w.comment,
-                    "create_time": w.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                    "deploy_info": w.deploy_info,
-                    "config": w.config,
-                    "id": w_id,
-                    "deploy_time": w.deploy_time.strftime('%Y-%m-%d %H:%M:%S')
-                }
-                r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
-                                                'data': email_data, 'e_type': 4,
-                                                'title': u'部署完成 等待测试确认'})
-                return response_json(200, '', '')
-            except Exception, e:
-                return response_json(500, e, '')
+        s = Services.select().where(Services.s == int(w.service)).get()
+        if int(w.status) != 2:
+            return response_json(301, '', u'工作流状态检测到已经被改变')
+        s.current_version = w.current_version  # 修改该服务的最新版本为当前上线版本
+        w.status = 3
+        w.ops_user = uid
+        try:
+            w.save()
+            s.save()
+            # 部署完成 邮件通知相关测试和工作流创建者
+            to_list = []
+            create_user = Users.select().where(Users.id == int(w.create_user)).get()
+            test_user = Users.select().where(Users.id == int(w.test_user)).get()
+            to_list.append(['', create_user.email])
+            to_list.append(['', test_user.email])
+            r = create_redis_connection()
+            email_data = {
+                "approved": False,
+                "service": id_to_service(w.service),
+                "version": w.current_version,
+                "team_name": id_to_team(w.team_name),
+                "dev_user": id_to_user(w.dev_user),
+                "test_user": id_to_user(w.test_user),
+                "create_user": id_to_user(w.create_user),
+                "production_user": id_to_user(w.production_user),
+                "sql_info": w.sql_info,
+                "comment": w.comment,
+                "create_time": w.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                "deploy_info": w.deploy_info,
+                "config": w.config,
+                "id": w_id,
+                "deploy_time": w.deploy_time.strftime('%Y-%m-%d %H:%M:%S')
+            }
+            r.rpush('email:consume:tasks', {'to_list': to_list,
+                                            'subject': u"工作流实时进度",
+                                            'data': email_data,
+                                            'title': u'部署完成 等待测试确认'})
+            return response_json(200, '', '')
+        except Exception, e:
+            return response_json(500, e, '')
     else:
         return ""
 
@@ -592,46 +555,36 @@ def sure_test():
             create_user = Users.select().where(Users.id == int(w.create_user)).get()
             test_user = Users.select().where(Users.id == int(w.test_user)).get()
             dev_user = Users.select().where(Users.id == int(w.dev_user)).get()
-            to_list.append(['', create_user.email])
-            to_list.append(['', test_user.email])
+            # 判断创建人和测试人是否为同一个 一般都是同一个
+            if create_user.email == test_user.email:
+                to_list.append(['', create_user.email])
+            else:
+                to_list.append(['', create_user.email])
+                to_list.append(['', test_user.email])
             to_list.append(['', dev_user.email])
             to_list.append(['', current_app.config["OPS_EMAIL"]])
 
-            e_type = 3 if int(w.type) == 1 else 4
-            if e_type == 3:
-                email_data = {
-                    "service": id_to_service(w.service),
-                    "version": w.current_version,
-                    "team_name": id_to_team(w.team_name),
-                    "dev_user": id_to_user(w.dev_user),
-                    "test_user": id_to_user(w.test_user),
-                    "create_user": id_to_user(w.create_user),
-                    "production_user": id_to_user(w.production_user),
-                    "sql_info": w.sql_info,
-                    "comment": w.comment,
-                    "create_time": w.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                    "deploy_info": w.deploy_info,
-                    "config": w.config,
-                    "id": w_id,
-                    "deploy_time": w.deploy_time.strftime('%Y-%m-%d %H:%M:%S')
-                }
-            else:
-                email_data = {
-                    "team_name": id_to_team(w.team_name),
-                    "test_user": id_to_user(w.test_user),
-                    "dev_user": id_to_user(w.dev_user),
-                    "create_user": id_to_user(w.create_user),
-                    "config": w.config,
-                    "comment": w.comment,
-                    "sql_info": w.sql_info,
-                    "create_time": w.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                    "deploy_time": w.deploy_time.strftime('%Y-%m-%d %H:%M:%S'),
-                    "id": w_id,
-                }
-
+            email_data = {
+                "approved": False,
+                "service": id_to_service(w.service),
+                "version": w.current_version,
+                "team_name": id_to_team(w.team_name),
+                "dev_user": id_to_user(w.dev_user),
+                "test_user": id_to_user(w.test_user),
+                "create_user": id_to_user(w.create_user),
+                "production_user": id_to_user(w.production_user),
+                "sql_info": w.sql_info,
+                "comment": w.comment,
+                "create_time": w.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                "deploy_info": w.deploy_info,
+                "config": w.config,
+                "id": w_id,
+                "deploy_time": w.deploy_time.strftime('%Y-%m-%d %H:%M:%S')
+            }
             r = create_redis_connection()
-            r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
-                                            'data': email_data, 'e_type': e_type,
+            r.rpush('email:consume:tasks', {'to_list': to_list,
+                                            'subject': u"工作流实时进度",
+                                            'data': email_data,
                                             'title': u'上线存在异常'})
             return response_json(200, '', '')
         else:
@@ -648,37 +601,23 @@ def sure_test():
                 test_user = Users.select().where(Users.id == int(w.test_user)).get()
                 dev_user = Users.select().where(Users.id == int(w.dev_user)).get()
 
-                e_type = 3 if int(w.type) == 1 else 4
-                if e_type == 3:
-                    email_data = {
-                        "service": id_to_service(w.service),
-                        "version": w.current_version,
-                        "team_name": id_to_team(w.team_name),
-                        "dev_user": id_to_user(w.dev_user),
-                        "test_user": id_to_user(w.test_user),
-                        "create_user": id_to_user(w.create_user),
-                        "production_user": id_to_user(w.production_user),
-                        "sql_info": w.sql_info,
-                        "comment": w.comment,
-                        "create_time": w.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                        "deploy_info": w.deploy_info,
-                        "config": w.config,
-                        "id": w_id,
-                        "deploy_time": w.deploy_time.strftime('%Y-%m-%d %H:%M:%S')
-                    }
-                else:
-                    email_data = {
-                        "team_name": id_to_team(w.team_name),
-                        "test_user": id_to_user(w.test_user),
-                        "dev_user": id_to_user(w.dev_user),
-                        "create_user": id_to_user(w.create_user),
-                        "config": w.config,
-                        "sql_info": w.sql_info,
-                        "comment": w.comment,
-                        "create_time": w.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                        "deploy_time": w.deploy_time.strftime('%Y-%m-%d %H:%M:%S'),
-                        "id": w_id,
-                    }
+                email_data = {
+                    "approved": False,
+                    "service": id_to_service(w.service),
+                    "version": w.current_version,
+                    "team_name": id_to_team(w.team_name),
+                    "dev_user": id_to_user(w.dev_user),
+                    "test_user": id_to_user(w.test_user),
+                    "create_user": id_to_user(w.create_user),
+                    "production_user": id_to_user(w.production_user),
+                    "sql_info": w.sql_info,
+                    "comment": w.comment,
+                    "create_time": w.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    "deploy_info": w.deploy_info,
+                    "config": w.config,
+                    "id": w_id,
+                    "deploy_time": w.deploy_time.strftime('%Y-%m-%d %H:%M:%S')
+                }
 
                 # 判断创建人和测试人是否为同一个 一般都是同一个
                 if create_user.email == test_user.email:
@@ -689,8 +628,9 @@ def sure_test():
                 to_list.append(['', dev_user.email])
                 to_list.append(['', current_app.config["OPS_EMAIL"]])
                 r = create_redis_connection()
-                r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u"工作流实时进度",
-                                                'data': email_data, 'e_type': e_type,
+                r.rpush('email:consume:tasks', {'to_list': to_list,
+                                                'subject': u"工作流实时进度",
+                                                'data': email_data,
                                                 'title': '部署完成 工作流关闭'})
                 return response_json(200, '', '')
             except Exception, e:

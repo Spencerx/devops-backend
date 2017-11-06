@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import requests
 import datetime
 from requests.exceptions import Timeout
 from json import JSONEncoder
-from urlparse import urljoin
 from flask import Blueprint, request, current_app
 from app.models.services import Services
 from app.tools.jsonUtils import response_json
 from app.tools.ormUtils import id_to_user, user_to_id
 from app.tools.switchflowUtils import registed_service
+from app.tools.connectpoolUtils import create_consul_connection
 from app.wrappers.permission import manager_required
 
 service = Blueprint('service', __name__)
@@ -126,9 +125,10 @@ def switch_flow_on():
             attribute = json_data['row']['attribute']
             attribute['down'] = 0
             attribute = JSONEncoder().encode(attribute)
-            r = requests.put(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
-                                     format(service_name, ip+":"+port)), data=str(attribute))
-            if r.status_code == 200:
+            c = create_consul_connection()
+            res = c.kv.put(key='upstreams/{0}/{1}'.format(service_name, ip+":"+port),
+                           value=str(attribute))
+            if res:
                 current_app.logger.info("{0} open service {1} flow: {2}:{3}".format(str(uid), service_name, ip, port))
                 return response_json(200, '', u'开启流量成功')
             else:
@@ -158,9 +158,10 @@ def switch_flow_off():
             attribute = json_data['row']['attribute']
             attribute['down'] = 1
             attribute = JSONEncoder().encode(attribute)
-            r = requests.put(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
-                                     format(service_name, ip+":"+port)), data=str(attribute))
-            if r.status_code == 200:
+            c = create_consul_connection()
+            res = c.kv.put(key='upstreams/{0}/{1}'.format(service_name, ip + ":" + port),
+                           value=str(attribute))
+            if res:
                 current_app.logger.info("{0} close service {1} flow: {2}:{3}".format(str(uid), service_name, ip, port))
                 return response_json(200, '', u'关闭流量成功')
             else:
@@ -193,9 +194,10 @@ def switch_flow_double_weight():
             else:
                 return response_json(500, u'权重已经为最高', '')
             attribute = JSONEncoder().encode(attribute)
-            r = requests.put(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
-                                     format(service_name, ip + ":" + port)), data=str(attribute))
-            if r.status_code == 200:
+            c = create_consul_connection()
+            res = c.kv.put(key='upstreams/{0}/{1}'.format(service_name, ip + ":" + port),
+                           value=str(attribute))
+            if res:
                 current_app.logger.info("{0} double service {1} flow: {2}:{3}".
                                         format(str(uid), service_name, ip, port))
                 return response_json(200, '', u'倍权成功')
@@ -228,9 +230,10 @@ def switch_flow_half_weight():
             else:
                 return response_json(500, u'权重已经为最低', '')
             attribute = JSONEncoder().encode(attribute)
-            r = requests.put(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
-                                     format(service_name, ip + ":" + port)), data=str(attribute))
-            if r.status_code == 200:
+            c = create_consul_connection()
+            res = c.kv.put(key='upstreams/{0}/{1}'.format(service_name, ip + ":" + port),
+                           value=str(attribute))
+            if res:
                 current_app.logger.info("{0} half service {1} flow: {2}:{3}".
                                         format(str(uid), service_name, ip, port))
                 return response_json(200, '', u'半权成功')
@@ -260,13 +263,13 @@ def scale_service_backend():
         attribute = JSONEncoder().encode(attribute)
         # check is exsist
         try:
-            r = requests.get(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
-                                     format(service_name, ip + ":" + port)))
-            if r.status_code == 404:
+            c = create_consul_connection()
+            res = c.kv.get(key='upstreams/{0}/{1}'.format(service_name, ip + ":" + port))[1]
+            if not res:
                 try:
-                    r = requests.put(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
-                                             format(service_name, ip + ":" + port)), data=str(attribute))
-                    if r.status_code == 200:
+                    res = c.kv.put(key='upstreams/{0}/{1}'.format(service_name, ip + ":" + port),
+                                   value=str(attribute))
+                    if res:
                         current_app.logger.info("{0} add service {1} flow: {2}:{3}".
                                                 format(str(uid), service_name, ip, port))
                         return response_json(200, '', u'添加成功')
@@ -296,9 +299,9 @@ def delete_service_backend():
         ip = str(json_data['ip']).strip()
         port = str(json_data['port']).strip()
         try:
-            r = requests.delete(urljoin(current_app.config['CONSUL_BASE_URL'], "upstreams/{0}/{1}".
-                                        format(service_name, ip + ":" + port)))
-            if r.status_code == 200:
+            c = create_consul_connection()
+            res = c.kv.delete(key='upstreams/{0}/{1}'.format(service_name, ip + ":" + port))
+            if res:
                 current_app.logger.info("{0} delete service {1} flow: {2}:{3}".
                                         format(str(uid), service_name, ip, port))
                 return response_json(200, '', u'删除成功')

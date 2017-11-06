@@ -4,9 +4,9 @@
 from jinja2 import Template
 
 
-def approve_template(e_type, **kwargs):
+def approve_template(**kwargs):
     """
-    审批邮件模版 根据e_type来动态生成邮件模版
+    审批邮件模版 动态生成邮件模版
     :return:
     """
     t = Template(u"""
@@ -16,11 +16,14 @@ def approve_template(e_type, **kwargs):
             <body>
             <div>
               <h1>{{ title }}</h1>
+              
+              {% if token %}
               <h3>请到运维平台完成审批或点击快速审批按钮完成一键快速审批</h3>
               <button style="background-color: deepskyblue">
                   <a href="{{ email_url }}?token={{ token }}" style="text-decoration: none">
                     一键快速审批
                   </a></button>
+              {% endif %}
             </div>
             <div style="margin-top: 1%">
               <table class="tb" border="0" cellpadding="12" cellspacing="2" style="width: 60%;
@@ -28,259 +31,115 @@ def approve_template(e_type, **kwargs):
                   border-top: 1px solid #E0E0E0;
                   border-left: 1px solid #E0E0E0;">
                 <thead>
+                
+                {% if id %}
                 <tr>
                   <th style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;width: 30%">工作流ID</th>
                   <th style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;"> {{ id }} </th>
                 </tr>
+                {% endif %}
                 </thead>
                 <tbody>
             
+                {% if team %}
                 <tr>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">团队</td>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ team }}</td>
                 </tr>
+                {% endif %}
             
-                {% if e_type==1 %}
+                {% if service %}
                 <tr>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">服务名</td>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ service }}</td>
                 </tr>
                 {% endif %}
                 
-                {% if e_type==1 %}
+                {% if version %}
                 <tr>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">版本</td>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ version }}</td>
                 </tr>
                 {% endif %}
                 
+                {% if create_user %}
                 <tr>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">创建人</td>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ create_user }}</td>
                 </tr>
+                {% endif %}
             
-                {% if e_type==1 %}
+                {% if dev_user %}
                 <tr>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">开发负责人</td>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ dev_user }}</td>
                 </tr>
                 {% endif %}
             
+                {% if test_user %}
                 <tr>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">测试负责人</td>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ test_user }}</td>
                 </tr>
+                {% endif %}
             
-                {% if e_type==1 %}
+                {% if production_user %}
                 <tr>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">产品负责人</td>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ production_user }}</td>
                 </tr>
                 {% endif %}
             
+                {% if create_time %}
                 <tr>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">创建时间</td>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ create_time }}</td>
                 </tr>
+                {% endif %}
             
+                {% if deploy_time %}
                 <tr>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">部署时间</td>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ deploy_time }}</td>
                 </tr>
+                {% endif %}
             
+                {% if sql_info %}
                 <tr>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">数据库变更详情</td>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ sql_info }}</td>
                 </tr>
+                {% endif %}
             
+                {% if config %}
                 <tr>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">配置变更</td>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ config }}</td>
                 </tr>
+                {% endif %}
                 
-                {% if e_type==1 %}
+                
+                {% if deploy_info %}
                 <tr>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">上线详情</td>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ deploy_info }}</td>
                 </tr>
                 {% endif %}
             
+                {% if comment %}
                 <tr>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">备注</td>
                   <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ comment }}</td>
                 </tr>
+                {% endif %}
                 </tbody>
               </table>
             </div>
             </body>
             </html>""")
-    if e_type == 1:
-        return t.render(title=kwargs['title'], email_url=kwargs['email_url'], token=kwargs['token'],
-                        id=kwargs['id'], team=kwargs['team'], service=kwargs['service'], e_type=e_type,
-                        version=kwargs['version'], dev_user=kwargs['dev_user'], test_user=kwargs['test_user'],
-                        production_user=kwargs['production_user'], create_time=kwargs['create_time'],
-                        deploy_time=kwargs['deploy_time'], sql_info=kwargs['sql_info'], config=kwargs['config'],
-                        deploy_info=kwargs['deploy_info'], comment=kwargs['comment'], create_user=kwargs['create_user'])
-    elif e_type == 2:
-        return t.render(title=kwargs['title'], email_url=kwargs['email_url'], token=kwargs['token'],
-                        id=kwargs['id'], team=kwargs['team'], test_user=kwargs['test_user'],
-                        create_time=kwargs['create_time'], deploy_time=kwargs['deploy_time'], e_type=e_type,
-                        sql_info=kwargs['sql_info'], comment=kwargs['comment'], create_user=kwargs['create_user'],)
-
-
-def trace_flow_process_template(e_type, **kwargs):
-    """
-    系统上线审批通过后邮件模版
-    :return:
-    """
-    t = Template(u"""
-                <html>
-                <head>
-                </head>
-                <body>
-                <div>
-                  <h1>{{ title }}</h1>
-                </div>
-                <div style="margin-top: 1%">
-                  <table class="tb" border="0" cellpadding="12" cellspacing="2" style="width: 60%;
-                      background-color: #f8f8f9;
-                      border-top: 1px solid #E0E0E0;
-                      border-left: 1px solid #E0E0E0;">
-                    <thead>
-                    <tr>
-                      <th style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;width: 30%">工作流ID</th>
-                      <th style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;"> {{ id }} </th>
-                    </tr>
-                    </thead>
-                    <tbody>
-
-                    <tr>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">团队</td>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ team }}</td>
-                    </tr>
-
-                    {% if e_type==3 %}
-                    <tr>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">服务名</td>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ service }}</td>
-                    </tr>
-                    {% endif %}
-
-                    {% if e_type==3 %}
-                    <tr>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">版本</td>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ version }}</td>
-                    </tr>
-                    {% endif %}
-
-                    <tr>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">创建人</td>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ create_user }}</td>
-                    </tr>
-
-                    {% if e_type==3 %}
-                    <tr>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">开发负责人</td>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ dev_user }}</td>
-                    </tr>
-                    {% endif %}
-
-                    <tr>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">测试负责人</td>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ test_user }}</td>
-                    </tr>
-
-                    {% if e_type==3 %}
-                    <tr>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">产品负责人</td>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ production_user }}</td>
-                    </tr>
-                    {% endif %}
-
-                    <tr>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">创建时间</td>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ create_time }}</td>
-                    </tr>
-
-                    <tr>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">部署时间</td>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ deploy_time }}</td>
-                    </tr>
-
-                    <tr>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">数据库变更详情</td>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ sql_info }}</td>
-                    </tr>
-
-                    <tr>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">配置变更</td>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ config }}</td>
-                    </tr>
-
-                    {% if e_type==3 %}
-                    <tr>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">上线详情</td>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ deploy_info }}</td>
-                    </tr>
-                    {% endif %}
-
-                    <tr>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">备注</td>
-                      <td style="border-right: 1px solid #E0E0E0;border-bottom: 1px solid #E0E0E0;">{{ comment }}</td>
-                    </tr>
-                    </tbody>
-                  </table>
-                </div>
-                </body>
-                </html>""")
-    if e_type == 3:
-        return t.render(title=kwargs['title'], e_type=e_type,
-                        id=kwargs['id'], team=kwargs['team'], service=kwargs['service'],
-                        version=kwargs['version'], dev_user=kwargs['dev_user'], test_user=kwargs['test_user'],
-                        production_user=kwargs['production_user'], create_time=kwargs['create_time'],
-                        deploy_time=kwargs['deploy_time'], sql_info=kwargs['sql_info'], config=kwargs['config'],
-                        deploy_info=kwargs['deploy_info'], comment=kwargs['comment'], create_user=kwargs['create_user'])
-    elif e_type == 4:
-        return t.render(title=kwargs['title'], id=kwargs['id'], team=kwargs['team'], test_user=kwargs['test_user'],
-                        create_time=kwargs['create_time'], deploy_time=kwargs['deploy_time'], e_type=e_type,
-                        sql_info=kwargs['sql_info'], comment=kwargs['comment'], create_user=kwargs['create_user'],)
-
-
-def db_after_approved_template():
-    """
-    数据库变更审批通过邮件模版
-    :return:
-    """
-    pass
-
-
-def deploy_confirm_template():
-    """
-    系统上线确认部署通过后邮件模版
-    :return:
-    """
-    pass
-
-
-def db_confirm_template():
-    """
-    数据库变更确认部署邮件模版
-    :return:
-    """
-    pass
-
-
-def deploy_noticeall_template():
-    """
-    系统上线成功上线通知全部人员
-    :return:
-    """
-    pass
-
-
-def db_noticeall_template():
-    """
-    数据库变更成功通知全部人员
-    :return:
-    """
-    pass
+    return t.render(title=kwargs['title'], email_url=kwargs['email_url'], token=kwargs['token'],
+                    id=kwargs['id'], team=kwargs['team'], service=kwargs['service'],
+                    version=kwargs['version'], dev_user=kwargs['dev_user'], test_user=kwargs['test_user'],
+                    production_user=kwargs['production_user'], create_time=kwargs['create_time'],
+                    deploy_time=kwargs['deploy_time'], sql_info=kwargs['sql_info'], config=kwargs['config'],
+                    deploy_info=kwargs['deploy_info'], comment=kwargs['comment'], create_user=kwargs['create_user'])

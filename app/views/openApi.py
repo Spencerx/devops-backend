@@ -12,7 +12,7 @@ from app.models.services import Services
 from app.models.users import Users
 from app.models.roles import Roles
 from app.tools.jsonUtils import response_json
-from app.tools.redisUtils import create_redis_connection
+from app.tools.connectpoolUtils import create_redis_connection
 from app.tools.emailUtils import decrypt_email_token
 from app.tools.ormUtils import id_to_service, id_to_user, id_to_team
 

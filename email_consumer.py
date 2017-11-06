@@ -11,7 +11,7 @@ import redis
 import logging
 import sys
 from app.tools.emailUtils import async_send_approved_email
-from app.tools.redisUtils import create_redis_connection
+from app.tools.connectpoolUtils import create_redis_connection
 
 env = os.environ.get('ads_env', 'dev')
 if env == 'prod':
@@ -30,7 +30,9 @@ logging.basicConfig(level=logging.INFO,
 
 
 def create_redis_connection():
-    pool = redis.ConnectionPool(host=Config.TASK_QUEUE['REDIS_IP'], port=Config.TASK_QUEUE['REDIS_PORT'], db=Config.TASK_QUEUE['REDIS_DB'])
+    pool = redis.ConnectionPool(host=Config.TASK_QUEUE['REDIS_IP'],
+                                port=Config.TASK_QUEUE['REDIS_PORT'],
+                                db=Config.TASK_QUEUE['REDIS_DB'])
     r = redis.Redis(connection_pool=pool)
     return r
 
@@ -48,13 +50,11 @@ def consume_email():
             title = task['title']
             subject = task['subject']
             data = task['data']
-            e_type = task['e_type']
-            print task
         except Exception, e:
             logging.error("email args may has exceptions,message: {0}".format(e.message))  # args exception
         else:
             logging.info("to:{0} subject:{1}".format(str(to_list), subject))
-            async_send_approved_email(to_list, subject, data, int(e_type), title=title)
+            async_send_approved_email(to_list, subject, data, title=title)
 
 
 if __name__ == '__main__':

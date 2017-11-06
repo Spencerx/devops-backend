@@ -3,7 +3,7 @@
 
 from flask import current_app
 import requests
-from app.tools.redisUtils import create_redis_connection
+from app.tools.connectpoolUtils import create_redis_connection
 
 # 移除https警告
 requests.packages.urllib3.disable_warnings()

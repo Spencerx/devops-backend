@@ -10,7 +10,7 @@ from requests.exceptions import Timeout
 from flask import Blueprint, request, current_app
 from app.tools.jsonUtils import response_json
 from app.tools.saltUtils import generate_salt_token, exec_commands, ping_check, trans_file
-from app.tools.redisUtils import create_redis_connection
+from app.tools.connectpoolUtils import create_redis_connection
 from app.tools.switchflowUtils import registed_service
 from app.models.workflows import Workflow
 from app.models.services import Services
@@ -45,7 +45,6 @@ def deploy_info():
                 service = Services.select().where((Services.s == w.service) & (Services.service_status == 1)).get()
             except services.DoesNotExist, _:
                 return response_json(404, u'服务不存在或未激活', '')
-
             backends = registed_service(scope='per', service=service.service_name.strip())
             if backends:
                 resp_data = {

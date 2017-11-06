@@ -10,7 +10,7 @@ import os
 import redis
 import logging
 import sys
-from app.tools.emailUtils import async_send_approved_email
+from app.tools.emailUtils import async_send_flow_email
 from app.tools.connectpoolUtils import create_redis_connection
 
 env = os.environ.get('ads_env', 'dev')
@@ -54,7 +54,7 @@ def consume_email():
             logging.error("email args may has exceptions,message: {0}".format(e.message))  # args exception
         else:
             logging.info("to:{0} subject:{1}".format(str(to_list), subject))
-            async_send_approved_email(to_list, subject, data, title=title)
+            async_send_flow_email(to_list, subject, data, title=title)
 
 
 if __name__ == '__main__':

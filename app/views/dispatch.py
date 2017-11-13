@@ -98,7 +98,6 @@ def resumejob():
 def addjob():
     if request.method == 'POST':
         with current_app.app_context():
-            print scheduler
             args = request.get_json()
             cron = args['cron']
             cron_args = get_trigger(cron)

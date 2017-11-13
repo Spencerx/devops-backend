@@ -15,4 +15,3 @@ from apscheduler.schedulers.gevent import GeventScheduler
 gevent_sched = GeventScheduler()
 scheduler = APScheduler(scheduler=gevent_sched)
 print '===== init scheduler ===='
-print scheduler

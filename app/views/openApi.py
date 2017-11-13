@@ -218,7 +218,7 @@ def confirm():
 
                     # 审核完成 邮件通知工作流创建者和运维
                     to_list = []
-                    create_user = Users.select().where(Users.id == int(w.create_user)).get()
+                    create_user = Users.select().where(Users.id == w.create_user).get()
                     to_list.append(['', create_user.email])
                     to_list.append(['', current_app.config["OPS_EMAIL"]])
                     r = create_redis_connection()

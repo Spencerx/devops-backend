@@ -78,7 +78,7 @@ def login():
                         current_app.logger.info('user {0} get token in redis success'.format(username))
                         return response_json(200, '', data=data)
                     new_token = generate_token(username)
-                    # 登陆页面点击记住密码token缓存10天 否则缓存24小时
+                    # 登陆页面点击记住密码token缓存10天 否则缓存2天
                     r.setex(username, new_token, 24 * 60 * 60 * 10) if remember_me \
                         else r.setex(username, new_token, 24 * 60 * 60 * 2)
                     data = {
@@ -90,8 +90,6 @@ def login():
                         'name': u.name
                     }
                     current_app.logger.info('user {0} generate new token {1} success'.format(username, new_token))
-                    from app import sse
-                    sse.publish({"message": "{0} now login! welcome".format(username)}, type='greeting')
                     return response_json(200, '', data=data)
                 else:
                     current_app.logger.warn('user {0} try to login but account is not actived'.
@@ -117,8 +115,6 @@ def logout():
         try:
             r.delete(username)
             current_app.logger.info('user {0} has safely logout'.format(username))
-            from app import sse
-            sse.publish({"message": "{0} now logout!".format(username)}, type='greeting')
             return response_json(200, '', '')
         except Exception, e:
             current_app.logger.error('redis delete token of user {0} failed, message:{1}'.format(username, e.message))

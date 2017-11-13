@@ -15,7 +15,6 @@ from app.tools.connectpoolUtils import create_redis_connection
 from app.tools.jsonUtils import response_json
 from app.tools.authUtils import varify_passwd
 from app.models.users import Users
-# from xpinyin import Pinyin
 import sys
 reload(sys)
 sys.setdefaultencoding("utf-8")
@@ -81,7 +80,7 @@ def login():
                     new_token = generate_token(username)
                     # 登陆页面点击记住密码token缓存10天 否则缓存24小时
                     r.setex(username, new_token, 24 * 60 * 60 * 10) if remember_me \
-                        else r.setex(username, new_token, 24 * 60 * 60 * 1)
+                        else r.setex(username, new_token, 24 * 60 * 60 * 2)
                     data = {
                         'username': username,
                         'role': u.role,

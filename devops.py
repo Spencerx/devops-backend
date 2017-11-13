@@ -14,7 +14,7 @@ def before_request():
                 or current_uri.startswith("/api/v1/auth/login") \
                 or current_uri.startswith("/api/v1/deploy") \
                 or current_uri.startswith("/api/v1/dispatch") \
-                or current_uri.startswith("/stream") \
+                or current_uri.startswith("/api/v1/stream") \
                 or current_uri.startswith("/api/v1/auth/logout") \
                 or current_uri.startswith("/api/v1/auth/register"):
             pass

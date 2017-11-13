@@ -32,7 +32,7 @@ def create_app():
     register_blueprints(app)
     CORS(app)
     single_scheduler(app)
-    app.register_blueprint(sse, url_prefix='/stream')
+    app.register_blueprint(sse, url_prefix='/api/v1/stream')
     return app
 
 

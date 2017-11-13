@@ -123,7 +123,7 @@ def logout():
             return response_json(200, '', '')
         except Exception, e:
             current_app.logger.error('redis delete token of user {0} failed, message:{1}'.format(username, e.message))
-            return response_json(500, e, '')
+            return response_json(500, e.message, '')
     else:
         return response_json(200, '', '')
 

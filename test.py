@@ -1,11 +1,24 @@
 
+from flask_cors import CORS
+from flask import Flask, render_template
+from flask_sse import sse
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
+app.register_blueprint(sse, url_prefix='/stream')
+app.config["REDIS_URL"] = "redis://localhost"
 
 
-import consul
-ret = {}
-try:
-    c = consul.Consul(host='192.168.15.255', port=8500, scheme='http')
-    res = c.kv.delete(key='upstreams/haixue_test/192.168.16.16:9090')
-    print res
-except Exception, e:
-    print e
+@app.route('/')
+def index():
+    return render_template("index.html")
+
+
+@app.route('/hello')
+def publish_hello():
+    sse.publish({"message": "Hello!"}, type='greeting')
+    return "Message sent!"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=28888)

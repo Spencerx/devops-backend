@@ -143,3 +143,56 @@ def approve_template(**kwargs):
                     production_user=kwargs['production_user'], create_time=kwargs['create_time'],
                     deploy_time=kwargs['deploy_time'], sql_info=kwargs['sql_info'], config=kwargs['config'],
                     deploy_info=kwargs['deploy_info'], comment=kwargs['comment'], create_user=kwargs['create_user'])
+
+
+def weekly_report(**kwargs):
+    """
+    周报统计上线模板
+    :return:
+    """
+    t = Template(u"""
+              <div style="text-align:center;">
+                  <h2>上线统计</h2>
+                  <h3>{{start_date}}- {{end_date}}</h3>
+                  <table width="600" cellpadding="0" cellspacing="0" border="1" style="margin:0 auto;"><tbody>
+                  
+                  <th>
+                    <div style="width:120px;text-align:left;font:12px/15px simsun;color:#000;background:#fff;">
+                     服务
+                    </div>
+                  </th>
+                
+                  <th>
+                    <div style="width:120px;text-align:left;font:12px/15px simsun;color:#000;background:#fff;">
+                      上线次数
+                    </div>
+                  </th>
+                
+                
+                  <th>
+                    <div style="width:120px;text-align:left;font:12px/15px simsun;color:#000;background:#fff;">
+                       回滚次数
+                    </div>
+                  </th>
+                
+                  <th>
+                    <div style="width:120px;text-align:left;font:12px/15px simsun;color:#000;background:#fff;">
+                      平均耗时(h)
+                    </div>
+                  </th>
+                    
+                 {% for service in services %}
+                  <tr>
+                    <td>{{ service.service_name }}</td>
+                    <td>{{ service.count }}</td>
+                    <td>{{ service.rollback }}</td>
+                    <td>{{ service.average_time }}</td>
+                  </tr>
+                  {% endfor %}
+                  
+                  </tbody></table>
+            </div>  """)
+
+    return t.render(start_date=kwargs['start_date'],
+                    end_date=kwargs['end_date'],
+                    service=kwargs['services'])

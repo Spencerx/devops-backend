@@ -91,6 +91,8 @@ def login():
                         'name': u.name
                     }
                     current_app.logger.info('user {0} generate new token {1} success'.format(username, new_token))
+                    from app import sse
+                    sse.publish({"message": "{0} now login! welcome".format(username)}, type='greeting')
                     return response_json(200, '', data=data)
                 else:
                     current_app.logger.warn('user {0} try to login but account is not actived'.
@@ -116,6 +118,8 @@ def logout():
         try:
             r.delete(username)
             current_app.logger.info('user {0} has safely logout'.format(username))
+            from app import sse
+            sse.publish({"message": "{0} now logout!".format(username)}, type='greeting')
             return response_json(200, '', '')
         except Exception, e:
             current_app.logger.error('redis delete token of user {0} failed, message:{1}'.format(username, e.message))

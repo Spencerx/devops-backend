@@ -141,7 +141,7 @@ def create_workflow():
         to_list = [[approved_user.id, approved_user.email] for approved_user in approved_users]
 
         # 临时需求 创建工作流需要通知测试负责人
-        to_list.append('', 'wangqin@haixue.com')
+        to_list.append(['', 'wangqin@haixue.com'])
 
         # 判断工作流类型 来区分处理逻辑
         # 系统上线

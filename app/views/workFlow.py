@@ -139,6 +139,10 @@ def create_workflow():
         utc_format = "%Y-%m-%dT%H:%M:%S.%fZ"
         approved_users = Users.select().where(Users.can_approved == '1')
         to_list = [[approved_user.id, approved_user.email] for approved_user in approved_users]
+
+        # 临时需求 创建工作流需要通知测试负责人
+        to_list.append('', 'wangqin@haixue.com')
+
         # 判断工作流类型 来区分处理逻辑
         # 系统上线
         if flow_type == 1:
@@ -341,11 +345,14 @@ def my_flow():
                         'create_time': per_flow.create_time.strftime('%Y-%m-%d %H:%M:%S'),
                         'deploy_time': per_flow.deploy_time.strftime('%Y-%m-%d %H:%M:%S'),
                         'team_name': per_flow.team_name,
+                        'access_info': per_flow.access_info,
                         'sql_info': per_flow.sql_info if per_flow.sql_info else '',
+                        'config_info': per_flow.config if per_flow.config else '',
                         'test_user': id_to_user(per_flow.test_user) if per_flow.test_user else '',
                         'create_user': id_to_user(per_flow.create_user) if per_flow.create_user else '',
                         'dev_user': id_to_user(per_flow.dev_user) if per_flow.dev_user else '',
                         'current_version': per_flow.current_version,
+                        'last_version': per_flow.last_version,
                         'comment': per_flow.comment if per_flow.comment else '',
                         'deploy_info': per_flow.deploy_info,
                         'service': id_to_service(per_flow.service),

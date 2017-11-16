@@ -9,7 +9,7 @@ from app.models.services import Services
 from app.models.server import Servers
 from app.models.service_server import ServiceBackend
 from app.tools.jsonUtils import response_json
-from app.tools.ormUtils import id_to_user, user_to_id
+from app.tools.ormUtils import id_to_user, user_to_id, service_to_id
 from app.tools.switchflowUtils import registed_service
 from app.tools.connectpoolUtils import create_consul_connection
 from app.wrappers.permission import manager_required
@@ -335,14 +335,14 @@ def destined_registed_service_backend_info():
     if request.method == "POST":
         service_name = request.get_json()['service']
         s = Services.select().where(Services.service_name == service_name).get()
-        service_id = s.s
+        service_id = service_to_id(service_name)
         current_version = s.current_version
-        is_dynamic = True if s.is_switch_flow == 1 else False
+        is_dynamic = True if int(s.is_switch_flow) == 1 else False
         if is_dynamic:
             backends = registed_service(scope='per', service=service_name)
             return response_json(200, '', data=backends)
         else:
-            hosts = ServiceBackend.select().where(ServiceBackend.server == service_id)
+            hosts = ServiceBackend.select().where(ServiceBackend.service == service_id)
             data = []
             for host in hosts:
                 per_data = {

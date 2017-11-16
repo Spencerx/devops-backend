@@ -607,6 +607,7 @@ def sure_test():
                 create_user = Users.select().where(Users.id == int(w.create_user)).get()
                 test_user = Users.select().where(Users.id == int(w.test_user)).get()
                 dev_user = Users.select().where(Users.id == int(w.dev_user)).get()
+                product_user = Users.select().where(Users.id == int(w.production_user)).get()
 
                 email_data = {
                     "approved": False,
@@ -633,6 +634,7 @@ def sure_test():
                     to_list.append(['', create_user.email])
                     to_list.append(['', test_user.email])
                 to_list.append(['', dev_user.email])
+                to_list.append(['', product_user.email])
                 to_list.append(['', current_app.config["OPS_EMAIL"]])
                 r = create_redis_connection()
                 r.rpush('email:consume:tasks', {'to_list': to_list,

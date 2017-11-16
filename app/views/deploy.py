@@ -68,9 +68,16 @@ def deploy_info():
                 servers = ServiceBackend.select().where(ServiceBackend.service == service.s)
                 for server in servers:
                     backend_info.append({
-                        'ip': Servers.select().where(Servers.id)
+                        'ip': Servers.select().where(Servers.id == server.server).get().internal_ip,
+                        'port': server.port,
+                        'attr': {
+                            'is_switch_flow': u'是' if int(service.is_switch_flow) == 1 else u'否',
+                            'version': service.current_version,
+                            'service': service.service_name,
+                            'last_version': service.current_version,
+                            }
                     })
-                return response_json(200, '', 'aaa')
+                return response_json(200, '', backend_info)
     else:
         return response_json(200, '', '')
 
@@ -84,16 +91,15 @@ def check_env():
     if request.method == "POST":
         json_data = request.get_json()
         _HOST = json_data['host']
-        _HOST = '127.0.0.1'
         _PORT = '9999'
         conn = grpc.insecure_channel(_HOST + ':' + _PORT)
         client = PingStub(channel=conn)
         try:
-            response = client.Ping(ReqPingData(health_url='ss'))
-        except Exception, e:
-            return response_json(500, 'agent\'s status is down', '')
+            response = client.Ping(ReqPingData(health_url=''))
+        except Exception, _:
+            return response_json(500, 'agent at {0} status is down'.format(_HOST), '')
         if response.status == "Pong":
-            return response_json(200, '', 'agent is health')
+            return response_json(200, '', 'Pong')
     else:
         return response_json(200, '', '')
 

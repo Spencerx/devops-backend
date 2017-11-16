@@ -6,6 +6,8 @@ from requests.exceptions import Timeout
 from json import JSONEncoder
 from flask import Blueprint, request, current_app
 from app.models.services import Services
+from app.models.server import Servers
+from app.models.service_server import ServiceBackend
 from app.tools.jsonUtils import response_json
 from app.tools.ormUtils import id_to_user, user_to_id
 from app.tools.switchflowUtils import registed_service
@@ -332,7 +334,25 @@ def destined_registed_service_backend_info():
     """
     if request.method == "POST":
         service_name = request.get_json()['service']
-        backends = registed_service(scope='per', service=service_name)
-        return response_json(200, '', data=backends)
+        s = Services.select().where(Services.service_name == service_name).get()
+        service_id = s.s
+        current_version = s.current_version
+        is_dynamic = True if s.is_switch_flow == 1 else False
+        if is_dynamic:
+            backends = registed_service(scope='per', service=service_name)
+            return response_json(200, '', data=backends)
+        else:
+            hosts = ServiceBackend.select().where(ServiceBackend.server == service_id)
+            data = []
+            for host in hosts:
+                per_data = {
+                    'ip': Servers.select().where(Servers.id == host.server).get().internal_ip,
+                    'port': host.port,
+                    'version': current_version,
+                    'service': service_name,
+                    'check_url': 'ok.html',
+                }
+                data.append(per_data)
+            return response_json(200, '', data)
     else:
         response_json(200, '', '')

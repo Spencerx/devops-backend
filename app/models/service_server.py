@@ -22,7 +22,6 @@ class ServiceBackend(BaseModel):
     port = IntegerField(null=True)
     server = IntegerField(db_column='server_id', index=True, null=True)
     service = IntegerField(db_column='service_id', index=True, null=True)
-    weight = IntegerField()
 
     class Meta:
         db_table = 'service_backend'

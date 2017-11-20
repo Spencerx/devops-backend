@@ -38,6 +38,8 @@ def service_list():
                     'comment': s.comment if s.comment else '',
                     'create_time': s.create_time.strftime('%Y-%m-%d %H:%M:%M'),
                     'service_leader': id_to_user(s.service_leader),
+                    'first_approve_user': id_to_user(s.first_approve_user),
+                    'second_approve_user': id_to_user(s.second_approve_user),
                     "language": s.language,
                     'service_status': u'激活' if int(s.service_status) == 1 else u"未激活",
                     'is_switch_flow': True if int(s.is_switch_flow) == 1 else False
@@ -88,6 +90,8 @@ def update_service():
         service_leader = json_data['service_leader']
         service_type = json_data['type']
         comment = json_data['comment']
+        first_approve_user = int(json_data['first_approve_user'])
+        second_approve_user = int(json_data['second_approve_user'])
         language = json_data['language']
         is_switch_flow = json_data['is_switch_flow']
         is_active = json_data['is_active']
@@ -96,6 +100,9 @@ def update_service():
             s = Services.select().where(Services.s == int(service_id)).get()
             s.service_name = service_name
             s.service_leader = service_leader
+            s.comment = comment
+            s.first_approve_user = first_approve_user
+            s.second_approve_user = second_approve_user
             s.comment = comment
             s.type = service_type
             s.language = language

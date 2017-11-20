@@ -137,25 +137,19 @@ def create_workflow():
         form_data = request.get_json()
         flow_type = form_data['flow_type']
         utc_format = "%Y-%m-%dT%H:%M:%S.%fZ"
-        approved_users = Users.select().where(Users.can_approved == '1')
-        to_list = [[approved_user.id, approved_user.email] for approved_user in approved_users]
-
-        # 临时需求 创建工作流需要通知测试负责人
-        to_list.append(['', 'wangqin@haixue.com'])
+        to_list = []
 
         # 判断工作流类型 来区分处理逻辑
         # 系统上线
         if flow_type == 1:
             services = form_data['service']
-            mail_services = ''
-            mail_ids = ''
-            mail_versions = ''
             team_name = form_data['team_name']
             dev_user = int(form_data['dev_user'])
             test_user = int(form_data['test_user'])
             create_user = int(form_data['create_user'])
             production_user = int(form_data['production_user'])
             sql_info = form_data['sql_info']
+            is_critical = form_data['is_critical']
             # 部署date
             deploy_date = datetime.datetime.strptime(form_data['deploy_date'], utc_format). \
                 strftime('%Y-%m-%d')
@@ -172,8 +166,6 @@ def create_workflow():
             for service in services:
                 service_name = service['service']
                 version = service['version']
-                mail_services = mail_services + service_name + " "
-                mail_versions = mail_versions + version + " "
                 w = Workflow(service=service_to_id(service_name), create_time=create_time,
                              dev_user=dev_user, test_user=test_user, production_user=production_user,
                              current_version=version, type=flow_type, deploy_time=deploy_order_time,
@@ -181,28 +173,48 @@ def create_workflow():
                              deploy_info=deploy_info, config=config, create_user=create_user)
                 w.save()
                 w_id = w.w
-                mail_ids = mail_ids + str(w_id) + " "  # 批量审批工作流的id字符串拼接值
-            email_data = {
-                "approved": True,
-                "service": mail_services,
-                "version": mail_versions,
-                "team_name": id_to_team(team_name),
-                "dev_user": id_to_user(dev_user),
-                "test_user": id_to_user(test_user),
-                "create_user": id_to_user(create_user),
-                "production_user": id_to_user(production_user),
-                "sql_info": sql_info,
-                "comment": comment,
-                "create_time": create_time,
-                "deploy_info": deploy_info,
-                "config": config,
-                "id": mail_ids,
-                "deploy_time": deploy_order_time,
-            }
-            r = create_redis_connection()
-            r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u'上线审批',
-                                            'data': email_data, 'title': u'系统上线审批'})
-            return response_json(200, '', 'create successful')
+                email_data = {
+                    "approved": True,
+                    "service": service_name,
+                    "version": version,
+                    "team_name": id_to_team(team_name),
+                    "dev_user": id_to_user(dev_user),
+                    "test_user": id_to_user(test_user),
+                    "create_user": id_to_user(create_user),
+                    "production_user": id_to_user(production_user),
+                    "sql_info": sql_info,
+                    "comment": comment,
+                    "create_time": create_time,
+                    "deploy_info": deploy_info,
+                    "config": config,
+                    "id": str(w_id),
+                    "deploy_time": deploy_order_time,
+                }
+
+                # 临时需求 创建工作流需要通知测试负责人
+                to_list.append(['', 'wangqin@haixue.com'])
+                if is_critical:
+                    """紧急上线 二级审批"""
+                    pass
+
+                # 对于一般上线 授权审批人和服务的负责人都可以审批
+                else:
+                    first_approve_user = Services.select().where(Services.service_name == service_name).\
+                                                        get().first_approve_user
+                    second_approve_user = Services.select().where(Services.service_name == service_name).\
+                                                        get().second_approve_user
+
+                    first_approve_user_email = Users.select().where(Users.id == first_approve_user).get().email
+                    second_approve_user_email = Users.select().where(Users.id == second_approve_user).get().email
+                    to_list.append(['', first_approve_user_email])
+                    to_list.append(['', second_approve_user_email])
+                    to_list.append(['', 'sunqilin@haixue.com'])  # add auth to debug
+                    to_list.append(['', 'wangqin@haixue.com'])  # add test leader to monitor
+                    r = create_redis_connection()
+                    r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u'上线审批',
+                                                    'data': email_data, 'title': u'系统上线审批'})
+
+            return response_json(200, '', '')
 
         # 数据库变更
         elif flow_type == 2:
@@ -338,7 +350,7 @@ def my_flow():
         else:
             flow_data = []
             for flow_id in workflow_list:
-                flows = Workflow.select().where(Workflow.w == flow_id)
+                flows = Workflow.select().where(Workflow.w == flow_id).order_by(Workflow.status)
                 for per_flow in flows:
                     per_flow_data = {
                         'ID': per_flow.w,

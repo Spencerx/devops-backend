@@ -23,6 +23,8 @@ class Services(BaseModel):
     service_leader = IntegerField()
     deploy_script = IntegerField()
     create_time = DateTimeField()
+    second_approve_user = IntegerField(null=True)
+    first_approve_user = IntegerField(null=True)
     current_version = CharField(null=True)
     is_switch_flow = IntegerField(default=2)
 

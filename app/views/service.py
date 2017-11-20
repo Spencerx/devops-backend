@@ -38,8 +38,8 @@ def service_list():
                     'comment': s.comment if s.comment else '',
                     'create_time': s.create_time.strftime('%Y-%m-%d %H:%M:%M'),
                     'service_leader': id_to_user(s.service_leader),
-                    'first_approve_user': id_to_user(s.first_approve_user),
-                    'second_approve_user': id_to_user(s.second_approve_user),
+                    'first_approve_user': id_to_user(s.first_approve_user) if s.first_approve_user else '',
+                    'second_approve_user': id_to_user(s.second_approve_user) if s.second_approve_user else '',
                     "language": s.language,
                     'service_status': u'激活' if int(s.service_status) == 1 else u"未激活",
                     'is_switch_flow': True if int(s.is_switch_flow) == 1 else False

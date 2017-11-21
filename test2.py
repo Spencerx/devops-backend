@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import docker
 
-client = docker.DockerClient(base_url='tcp://171.221.199.201:2375', version='1.24')
 
-print client.images.list()
+a = [1,2,3,4,5,5,6,7,4,3,2]
+uniq_list = [['', i] for i in a]
+print uniq_list

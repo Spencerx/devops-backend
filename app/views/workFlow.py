@@ -12,8 +12,6 @@ from app.tools.jsonUtils import response_json
 from app.tools.connectpoolUtils import create_redis_connection
 from app.tools.ormUtils import id_to_user, id_to_service, id_to_team, id_to_status, id_to_flow_type, \
     service_to_id, querylastversion_by_id
-import gevent.monkey
-gevent.monkey.patch_all()
 
 workflow = Blueprint('workflow', __name__)
 
@@ -87,8 +85,7 @@ def workflow_history_search():
         if id:
             try:
                 workflow = Workflow.select().where(Workflow.w == int(id)).get()
-            except Exception, e:
-                print e
+            except Workflow.DoesNotExist, _:
                 return response_json(200, '', {'count': 0, 'data': []})
             data = []
             per_flow = {
@@ -137,7 +134,7 @@ def create_workflow():
         form_data = request.get_json()
         flow_type = form_data['flow_type']
         utc_format = "%Y-%m-%dT%H:%M:%S.%fZ"
-        to_list = []
+        to_list = []  # 创建工单发送相关人员的email list [[user_id, user_email],...]
 
         # 判断工作流类型 来区分处理逻辑
         # 系统上线
@@ -206,10 +203,17 @@ def create_workflow():
 
                     first_approve_user_email = Users.select().where(Users.id == first_approve_user).get().email
                     second_approve_user_email = Users.select().where(Users.id == second_approve_user).get().email
-                    to_list.append(['', first_approve_user_email])
-                    to_list.append(['', second_approve_user_email])
-                    to_list.append(['', 'sunqilin@haixue.com'])  # add auth to debug
-                    to_list.append(['', 'wangqin@haixue.com'])  # add test leader to monitor
+                    to_list.append([int(first_approve_user), first_approve_user_email])
+                    to_list.append([int(second_approve_user), second_approve_user_email])
+                    to_list.append([55, 'sunqilin@haixue.com'])  # add auth to debug
+
+                    # clear same email addr
+                    uniq_to_list = []
+                    for to in to_list:
+                        uniq_to_list.append(to[1])
+                    uniq_to_list = list(set(uniq_to_list))
+                    to_list = [['', to] for to in uniq_to_list]
+
                     r = create_redis_connection()
                     r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u'上线审批',
                                                     'data': email_data, 'title': u'系统上线审批'})
@@ -218,7 +222,6 @@ def create_workflow():
 
         # 数据库变更
         elif flow_type == 2:
-            mail_ids = ''
             team_name = form_data['team_name']
             test_user = int(form_data['test_user'])
             dev_user = int(form_data['dev_user'])
@@ -238,8 +241,7 @@ def create_workflow():
                          sql_info=sql_info, team_name=team_name, comment=comment, create_user=create_user,
                          deploy_time=deploy_order_time, deploy_end_time=deploy_order_time)
             w.save()
-            w_id = w.w
-            mail_ids = mail_ids + str(w_id) + " "  # 批量审批工作流的id字符串拼接值
+            mail_id = str(w.w)
             email_data = {
                 "approved": True,
                 "service": '',
@@ -254,9 +256,11 @@ def create_workflow():
                 "create_time": create_time,
                 "deploy_info": '',
                 "config": '',
-                "id": mail_ids,
+                "id": mail_id,
                 "deploy_time": deploy_order_time,
             }
+            approved_users = Users.select().where(Users.can_approved == '1')
+            to_list = [[approved_user.id, approved_user.email] for approved_user in approved_users]
             r = create_redis_connection()
             r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u'数据库变更审批',
                                             'data': email_data, 'title': u'数据库变更审批'})
@@ -301,6 +305,8 @@ def create_workflow():
                 "id": w_id,
                 "deploy_time": deploy_order_time,
             }
+            approved_users = Users.select().where(Users.can_approved == '1')
+            to_list = [[approved_user.id, approved_user.email] for approved_user in approved_users]
             r = create_redis_connection()
             r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u'配置变更审批',
                                             'data': email_data, 'title': u'配置变更审批'})
@@ -395,11 +401,11 @@ def approved_flow():
         w_id = json_data['w_id']
         try:
             w = Workflow.select().where(Workflow.w == w_id).get()
-        except Exception, e:
+        except Workflow.DoesNotExist, _:
             return response_json(500, u'工作流不存在', '')
         if approved == "access":
             if int(w.status) != 1:
-                return response_json(301, '', u'工作流状态检测到已经被改变')
+                return response_json(301, '', u'工作流已经被审批')
             w.status = int(w.status) + 1
             w.access_info = suggestion
             w.approved_user = int(uid)

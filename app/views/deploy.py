@@ -89,8 +89,8 @@ def check_env():
     :return:
     """
     if request.method == "POST":
-        json_data = request.get_json()
-        _HOST = json_data['host']
+        form_data = request.form.to_dict()  # Ajax json request
+        _HOST = form_data['host']
         _PORT = '9999'
         conn = grpc.insecure_channel(_HOST + ':' + _PORT)
         client = PingStub(channel=conn)

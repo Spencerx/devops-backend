@@ -74,7 +74,7 @@ def generate_confirm_email_token(uid, w_id):
     :param w_id: 工作流的id(可能我是多个id的拼接的字符串 examp:"1,5,2")
     :return: 用于加在审批链接后的get参数 用于后端识别审批者和审批工作流
     """
-    s = Serializer(secret_key=Config.secret_key)
+    s = Serializer(secret_key=Config.secret_key, expires_in=48*60*60)
     return s.dumps({'uid': uid, 'w_id': w_id})
 
 

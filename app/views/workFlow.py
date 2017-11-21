@@ -200,19 +200,25 @@ def create_workflow():
                                                         get().first_approve_user
                     second_approve_user = Services.select().where(Services.service_name == service_name).\
                                                         get().second_approve_user
+                    try:
+                        first_approve_user_email = Users.select().where(Users.id == first_approve_user).get().email
+                        if [int(first_approve_user), first_approve_user_email] in to_list:
+                            pass
+                        else:
+                            to_list.append([int(first_approve_user), first_approve_user_email])
+                    except Users.DoesNotExist, _:
+                        current_app.logger.error('service {0} does not config first approve user'.format(service_name))
 
-                    first_approve_user_email = Users.select().where(Users.id == first_approve_user).get().email
-                    second_approve_user_email = Users.select().where(Users.id == second_approve_user).get().email
-                    to_list.append([int(first_approve_user), first_approve_user_email])
-                    to_list.append([int(second_approve_user), second_approve_user_email])
+                    try:
+                        second_approve_user_email = Users.select().where(Users.id == second_approve_user).get().email
+                        if [int(second_approve_user), second_approve_user_email] in to_list:
+                            pass
+                        else:
+                            to_list.append([int(second_approve_user), second_approve_user_email])
+                    except Users.DoesNotExist, _:
+                        pass
+
                     to_list.append([55, 'sunqilin@haixue.com'])  # add auth to debug
-
-                    # clear same email addr
-                    uniq_to_list = []
-                    for to in to_list:
-                        uniq_to_list.append(to[1])
-                    uniq_to_list = list(set(uniq_to_list))
-                    to_list = [['', to] for to in uniq_to_list]
 
                     r = create_redis_connection()
                     r.rpush('email:consume:tasks', {'to_list': to_list, 'subject': u'上线审批',

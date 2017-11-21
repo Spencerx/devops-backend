@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from collections import Counter
 
-
-a = [1,2,3,4,5,5,6,7,4,3,2]
-uniq_list = [['', i] for i in a]
-print uniq_list
+a = [[1, 2], [3, 4], [1, 2]]
+if [1,12] in a:
+    print 'ok'

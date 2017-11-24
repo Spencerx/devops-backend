@@ -376,7 +376,7 @@ def my_flow():
                         'create_user': id_to_user(per_flow.create_user) if per_flow.create_user else '',
                         'dev_user': id_to_user(per_flow.dev_user) if per_flow.dev_user else '',
                         'current_version': per_flow.current_version,
-                        'last_version': per_flow.last_version,
+                        'last_version': Services.select().where(Services.s == per_flow.service).get().current_version,
                         'comment': per_flow.comment if per_flow.comment else '',
                         'deploy_info': per_flow.deploy_info,
                         'service': id_to_service(per_flow.service),

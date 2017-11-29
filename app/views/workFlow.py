@@ -329,10 +329,10 @@ def create_workflow():
         return ''
 
 
-@workflow.route('/myflow', methods=['POST', 'OPTION'])
-def my_flow():
+@workflow.route('/realtime', methods=['POST', 'OPTION'])
+def realtime():
     """
-    获取需要当前用户处理的工作流
+    获取需要当前用户处理的实时工作流
     :return:
     """
     if request.method == "POST":
@@ -391,6 +391,69 @@ def my_flow():
 
     else:
         return ''
+
+
+@workflow.route('/myflow', methods=['POST', 'OPTION'])
+def my_flow():
+    """
+    我的工作流
+    :return:
+    """
+    if request.method == "POST":
+        req_data = request.get_json()
+        uid = req_data['uid']
+        flows = Workflow.select().where(Workflow.create_user == int(uid)).order_by(Workflow.status)
+        flow_data = []
+        for per_flow in flows:
+            per_flow_data = {
+                'ID': per_flow.w,
+                'create_time': per_flow.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                'deploy_time': per_flow.deploy_time.strftime('%Y-%m-%d %H:%M:%S'),
+                'team_name': per_flow.team_name,
+                'access_info': per_flow.access_info,
+                'sql_info': per_flow.sql_info if per_flow.sql_info else '',
+                'config_info': per_flow.config if per_flow.config else '',
+                'test_user': id_to_user(per_flow.test_user) if per_flow.test_user else '',
+                'create_user': id_to_user(per_flow.create_user) if per_flow.create_user else '',
+                'dev_user': id_to_user(per_flow.dev_user) if per_flow.dev_user else '',
+                'current_version': per_flow.current_version,
+                'last_version': Services.select().where(Services.s == per_flow.service).get().current_version,
+                'comment': per_flow.comment if per_flow.comment else '',
+                'deploy_info': per_flow.deploy_info,
+                'service': id_to_service(per_flow.service),
+                'status_info': id_to_status(per_flow.status),
+                'status': per_flow.status,
+                'config': per_flow.config if per_flow.config else '',
+                'flow_type': id_to_flow_type(per_flow.type),
+            }
+            flow_data.append(per_flow_data)
+        return response_json(200, "", {'data': flow_data})
+
+    else:
+        return response_json(200, '', '')
+
+
+@workflow.route('/revoke_flow', methods=['POST', 'OPTION'])
+def revoke_flow():
+    """
+    创建者撤销工作流
+    :return:
+    """
+    if request.method == "POST":
+        req_data = request.get_json()
+        uid = req_data['uid']
+        flow_id = req_data['flow_id']
+        flow = Workflow.select().where(Workflow.w == int(flow_id)).get()
+        # validate create user
+        if int(uid) != int(flow.create_user):
+            return response_json(500, u'你不能删除别人创建的工作流噢!', '')
+        else:
+            revoke = Workflow.delete().where(Workflow.w == int(flow_id))
+            revoke.execute()
+            return response_json(200, "", u"撤销成功")
+
+    else:
+        return response_json(200, '', '')
 
 
 @workflow.route('/approved', methods=['POST', 'OPTION'])

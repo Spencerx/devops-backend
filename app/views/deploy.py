@@ -7,7 +7,6 @@ from urlparse import urljoin
 from requests.exceptions import Timeout
 from flask import Blueprint, request, current_app
 from app.tools.jsonUtils import response_json
-from app.tools.saltUtils import generate_salt_token
 from app.tools.connectpoolUtils import create_redis_connection
 from app.tools.switchflowUtils import registed_service
 from app.models.workflows import Workflow
@@ -17,8 +16,8 @@ from app.models.service_server import ServiceBackend
 from app.models import workflows
 from app.models import services
 import grpc
-from app.protobufs.airflow_pb2 import ReqPingData, ReqCheckSvcData
-from app.protobufs.airflow_pb2_grpc import PingStub, ServiceCheckStub
+from app.protobufs.airflow_pb2 import ReqPingData, ReqCheckSvcData, ReqDeployData
+from app.protobufs.airflow_pb2_grpc import PingStub, ServiceCheckStub, DeployStub
 
 deploy = Blueprint("deploy", __name__)
 
@@ -136,18 +135,26 @@ def auto_switch_flow_off():
         return response_json(200, '', '')
 
 
-@deploy.route("/deploy_product", methods=["POST"])
+@deploy.route("/deploy_service", methods=["POST"])
 def deploy_product():
     """
-    正式部署 执行脚本
+    正式部署 rpc调用远程机器执行本地方法
     :return:
     """
     if request.method == "POST":
-        salt_token = generate_salt_token()
-        json_data = request.get_json()
-        script_target_path = current_app.config["DEPLOY_SCRIPTS_SAVE_PATH"]
-        host = json_data['host']
-        flow_id = json_data['flow_id']
+        form_data = request.form.to_dict()  # Ajax json request
+        _HOST = form_data['host']
+        _PORT = '9999'
+        conn = grpc.insecure_channel(_HOST + ':' + _PORT)
+        client = DeployStub(channel=conn)
+        try:
+            response = client.Deploy(ReqDeployData(version='1.6', type='jar', port=1800, service_name='api'))
+        except Exception, e:
+            print e
+            return response_json(500, 'agent at {0} deploy failed'.format(_HOST), '')
+        resp = response.ret.items()
+        ret = {i[0]: i[1] for i in resp}
+        return response_json(200, '', ret)
     else:
         return response_json(200, '', '')
 
@@ -164,12 +171,13 @@ def auto_switch_flow_on():
 @deploy.route("/check_deploy", methods=["POST"])
 def check_deploy():
     if request.method == "POST":
-        json_data = request.get_json()
+        json_data = request.form.to_dict()
         _HOST = json_data['host']
-        _HOST = '127.0.0.1'
+        _SERVICEPORT = json_data['port']
         _PORT = '9999'
         conn = grpc.insecure_channel(_HOST + ':' + _PORT)
-        check_url = 'http://baidu.com'
+        check_url = 'http://' + _HOST + ':' + str(_SERVICEPORT)
+        check_url = 'https://baidu.com'
         cli_check = ServiceCheckStub(channel=conn)
         for count in range(3):
             try:
@@ -178,9 +186,7 @@ def check_deploy():
                 return response_json(500, 'check url has exception', '')
             else:
                 if res_check.status == '200':
-                    return response_json(200, 'service is healthy', '')
-            import time
-            time.sleep(3)
+                    return response_json(200, '', 'service is healthy')
         return response_json(500, 'check service url timeout, service maybe is starting just now', '')
     else:
         return response_json(200, '', '')
@@ -208,6 +214,18 @@ def show_deploy_log():
             return response_json(200, '', resp)
         except Exception, _:
             return response_json(500, 'connect redis exception', '')
+    else:
+        return response_json(200, '', '')
+
+
+@deploy.route("/update_all_agent", methods=["POST"])
+def update_all_agent():
+    """
+    更新所有agent
+    :return:
+    """
+    if request.method == "POST":
+        pass
     else:
         return response_json(200, '', '')
 

@@ -48,6 +48,7 @@ def userinfo():
                         'token': token,
                         'name': u.name if u.name else '',
                         'is_admin': u.is_admin if u.is_admin else '',
+                        'is_ops': True if int(u.role) == 1 else False,
                     }
                 except Exception, e:
                     return response_json(500, u'用户未找到', '')

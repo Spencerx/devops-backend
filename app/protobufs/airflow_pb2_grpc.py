@@ -58,8 +58,8 @@ class DeployStub(object):
     """
     self.Deploy = channel.unary_unary(
         '/service.Deploy/Deploy',
-        request_serializer=airflow__pb2.ReqPingData.SerializeToString,
-        response_deserializer=airflow__pb2.RespPingData.FromString,
+        request_serializer=airflow__pb2.ReqDeployData.SerializeToString,
+        response_deserializer=airflow__pb2.RespDeployData.FromString,
         )
 
 
@@ -79,8 +79,8 @@ def add_DeployServicer_to_server(servicer, server):
   rpc_method_handlers = {
       'Deploy': grpc.unary_unary_rpc_method_handler(
           servicer.Deploy,
-          request_deserializer=airflow__pb2.ReqPingData.FromString,
-          response_serializer=airflow__pb2.RespPingData.SerializeToString,
+          request_deserializer=airflow__pb2.ReqDeployData.FromString,
+          response_serializer=airflow__pb2.RespDeployData.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

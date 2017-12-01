@@ -134,7 +134,6 @@ def create_workflow():
         form_data = request.get_json()
         flow_type = form_data['flow_type']
         utc_format = "%Y-%m-%dT%H:%M:%S.%fZ"
-        to_list = []  # 创建工单发送相关人员的email list [[user_id, user_email],...]
 
         # 判断工作流类型 来区分处理逻辑
         # 系统上线
@@ -188,9 +187,11 @@ def create_workflow():
                     "deploy_time": deploy_order_time,
                 }
 
+                to_list = []  # 创建工单发送相关人员的email list [[user_id, user_email],...]
+
                 # 临时需求 创建工作流需要通知测试负责人
-                to_list.append(['', 'wangqin@haixue.com'])
-                if is_critical:
+                to_list.append([63, 'wangqin@haixue.com'])
+                if 1 == 2:
                     """紧急上线 二级审批"""
                     pass
 

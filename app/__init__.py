@@ -18,7 +18,7 @@ blueprints = [
     ('app.views.config:config', '/api/v1/config'),
     ('app.views.notice:notice', '/api/v1/notice'),
     ('app.views.service:service', '/api/v1/service'),
-    ('app.views.elk:elk', '/api/v1/elk'),
+    ('app.views.report:report', '/api/v1/report'),
     ('app.views.server:server', '/api/v1/server'),
     ('app.views.deploy:deploy', '/api/v1/deploy'),
     ('app.views.script:script', '/api/v1/script'),

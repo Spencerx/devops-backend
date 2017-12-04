@@ -12,9 +12,7 @@ def before_request():
         current_uri = request.path
         if current_uri.startswith("/api/v1/common") \
                 or current_uri.startswith("/api/v1/auth/login") \
-                or current_uri.startswith("/api/v1/deploy") \
                 or current_uri.startswith("/api/v1/dispatch") \
-                or current_uri.startswith("/api/v1/stream") \
                 or current_uri.startswith("/api/v1/auth/logout") \
                 or current_uri.startswith("/api/v1/auth/register"):
             pass

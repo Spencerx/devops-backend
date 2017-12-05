@@ -17,12 +17,12 @@ from app.wrappers.permission import manager_required
 service = Blueprint('service', __name__)
 
 
-@service.route('/service')
+@service.route('/service', methods=['GET', 'POST'])
 def service_list():
     """
         查询团队 is_filter_disactived来判断是否返回未激活的服务
         :return:
-        """
+    """
     if request.method == "GET":
         try:
             if request.args.get("is_filter_disactived", None):
@@ -49,6 +49,34 @@ def service_list():
         except Exception, e:
             current_app.logger.error("get all service failed message:{0}".format(e))
             return response_json(500, e, "")
+
+    elif request.method == "POST":
+        form_data = request.get_json()
+        per_size = form_data['size']
+        page_count = form_data['page']
+        if page_count == 0:
+            ss = Services.select().limit(10).order_by(Services.s.desc())
+        else:
+            ss = Services.select().limit(int(per_size)).offset((int(page_count)-1)*int(per_size)).\
+                order_by(Services.s.desc())
+        data = []
+        for s in ss:
+            per_service = {
+                'id': s.s,
+                'service_name': s.service_name,
+                'type': s.type,
+                'comment': s.comment if s.comment else '',
+                'create_time': s.create_time.strftime('%Y-%m-%d %H:%M:%M'),
+                'service_leader': id_to_user(s.service_leader),
+                'first_approve_user': id_to_user(s.first_approve_user) if s.first_approve_user else '',
+                'second_approve_user': id_to_user(s.second_approve_user) if s.second_approve_user else '',
+                "language": s.language,
+                'service_status': u'激活' if int(s.service_status) == 1 else u"未激活",
+                'is_switch_flow': True if int(s.is_switch_flow) == 1 else False
+            }
+            data.append(per_service)
+        service_count = Services.select().count()
+        return response_json(200, '', {"count": service_count, "data": data})
     else:
         return response_json(200, "", "")
 

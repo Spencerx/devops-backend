@@ -24,6 +24,7 @@ class Workflow(BaseModel):
     last_version = CharField(null=True)
     production_user = CharField()
     service = CharField()
+    deploy_type = CharField()
     sql_info = CharField(null=True)
     status = IntegerField()
     team_name = CharField()

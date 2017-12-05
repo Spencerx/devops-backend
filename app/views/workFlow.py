@@ -52,6 +52,7 @@ def history():
                 'current_version': workflow.current_version,
                 'last_version': querylastversion_by_id(workflow.service),
                 'comment': workflow.comment,
+                'deploy_type': u'线上bug修复' if workflow.deploy_type == '1' else u'正常上线(遗留bug修复)',
                 'deploy_info': workflow.deploy_info,
                 'status': workflow.status,
                 'is_except': workflow.is_except,
@@ -107,6 +108,7 @@ def workflow_history_search():
                 'deploy_info': workflow.deploy_info,
                 'status': workflow.status,
                 'is_except': workflow.is_except,
+                'deploy_type': workflow.deploy_type,
                 'status_info': id_to_status(workflow.status),
                 'service': id_to_service(workflow.service) if workflow.service else '',
                 'approved_user': id_to_user(workflow.approved_user) if workflow.approved_user else '',
@@ -138,26 +140,31 @@ def create_workflow():
         # 判断工作流类型 来区分处理逻辑
         # 系统上线
         if flow_type == 1:
-            services = form_data['service']
-            team_name = form_data['team_name']
-            dev_user = int(form_data['dev_user'])
-            test_user = int(form_data['test_user'])
-            create_user = int(form_data['create_user'])
-            production_user = int(form_data['production_user'])
-            sql_info = form_data['sql_info']
-            is_critical = form_data['is_critical']
+            try:
+                services = form_data['service']
+                team_name = form_data['team_name']
+                dev_user = int(form_data['dev_user'])
+                test_user = int(form_data['test_user'])
+                create_user = int(form_data['create_user'])
+                production_user = int(form_data['production_user'])
+                sql_info = form_data['sql_info']
+                deploy_type = form_data['deploy_type']
+                is_critical = form_data['is_critical']
+                comment = form_data['comment']
+                deploy_info = form_data['deploy_info']
+                config = form_data['config']
+                # 部署time
+                deploy_time = form_data['deploy_time']
+            except KeyError, _:
+                return response_json(500, u'填写有误,请认真检查(输入中文名注意系统是否联想,若没有联想则该用户未注册)', '')
             # 部署date
             deploy_date = datetime.datetime.strptime(form_data['deploy_date'], utc_format). \
                 strftime('%Y-%m-%d')
             # 这里有bug deoloy_date 是last day 所以加 one day 原因未知
             deploy_date = datetime.datetime.strptime(deploy_date, '%Y-%m-%d') + datetime.timedelta(days=1)
-            # 部署time
-            deploy_time = form_data['deploy_time']
+
             # 发布时间 time+date
             deploy_order_time = datetime.datetime.strftime(deploy_date, "%Y-%m-%d") + " " + deploy_time
-            comment = form_data['comment']
-            deploy_info = form_data['deploy_info']
-            config = form_data['config']
             create_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             for service in services:
                 service_name = service['service']
@@ -165,7 +172,7 @@ def create_workflow():
                 w = Workflow(service=service_to_id(service_name), create_time=create_time,
                              dev_user=dev_user, test_user=test_user, production_user=production_user,
                              current_version=version, type=flow_type, deploy_time=deploy_order_time,
-                             sql_info=sql_info, team_name=team_name, comment=comment,
+                             sql_info=sql_info, team_name=team_name, comment=comment, deploy_type=deploy_type,
                              deploy_info=deploy_info, config=config, create_user=create_user)
                 w.save()
                 w_id = w.w
@@ -377,6 +384,7 @@ def realtime():
                         'create_user': id_to_user(per_flow.create_user) if per_flow.create_user else '',
                         'dev_user': id_to_user(per_flow.dev_user) if per_flow.dev_user else '',
                         'current_version': per_flow.current_version,
+                        'deploy_type': u'线上bug修复' if per_flow.deploy_type == '1' else u'正常上线(遗留bug修复)',
                         'last_version': Services.select().where(Services.s == per_flow.service).get().current_version,
                         'comment': per_flow.comment if per_flow.comment else '',
                         'deploy_info': per_flow.deploy_info,
@@ -418,6 +426,7 @@ def my_flow():
                 'create_user': id_to_user(per_flow.create_user) if per_flow.create_user else '',
                 'dev_user': id_to_user(per_flow.dev_user) if per_flow.dev_user else '',
                 'current_version': per_flow.current_version,
+                'deploy_type': u'线上bug修复' if per_flow.deploy_type == '1' else u'正常上线(遗留bug修复)',
                 'last_version': Services.select().where(Services.s == per_flow.service).get().current_version,
                 'comment': per_flow.comment if per_flow.comment else '',
                 'deploy_info': per_flow.deploy_info,

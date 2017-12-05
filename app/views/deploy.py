@@ -90,14 +90,24 @@ def check_env():
     if request.method == "POST":
         form_data = request.form.to_dict()  # Ajax json request
         _HOST = form_data['host']
+        port = form_data['port']
         _PORT = '9999'
+        flow_id = form_data['flow_id']
+        r = create_redis_connection()
+        try:
+            r.hdel('deploy_log_{0}'.format(flow_id), _HOST+':'+str(port))
+        except Exception, _:
+            pass
         conn = grpc.insecure_channel(_HOST + ':' + _PORT)
         client = PingStub(channel=conn)
         try:
             response = client.Ping(ReqPingData(health_url=''))
-        except Exception, _:
+        except Exception, e:
+            r.hset('deploy_log_{0}'.format(flow_id), _HOST+':'+str(port), 'agent status is down \n')
             return response_json(500, 'agent at {0} status is down'.format(_HOST), '')
         if response.status == "Pong":
+            r.hset('deploy_log_{0}'.format(flow_id), _HOST + ':' + str(port),
+                   'agent status is ok \n')
             return response_json(200, '', 'Pong')
     else:
         return response_json(200, '', '')
@@ -144,16 +154,26 @@ def deploy_product():
     if request.method == "POST":
         form_data = request.form.to_dict()  # Ajax json request
         _HOST = form_data['host']
+        port = form_data['port']
+        flow_id = form_data['flow_id']
         _PORT = '9999'
         conn = grpc.insecure_channel(_HOST + ':' + _PORT)
         client = DeployStub(channel=conn)
+        r = create_redis_connection()
+        pre_log = r.hget('deploy_log_{0}'.format(flow_id), _HOST + ':' + str(port))
         try:
             response = client.Deploy(ReqDeployData(version='1.6', type='jar', port=1800, service_name='api'))
         except Exception, e:
             print e
+            r.hset('deploy_log_{0}'.format(flow_id), _HOST + ':' + str(port), pre_log + '\n' + str(e))
             return response_json(500, 'agent at {0} deploy failed'.format(_HOST), '')
         resp = response.ret.items()
+
         ret = {i[0]: i[1] for i in resp}
+        print flow_id
+        print pre_log
+        print ret['logs']
+        r.hset('deploy_log_{0}'.format(flow_id), _HOST + ':' + str(port), pre_log + '\n' + ret['logs'])
         return response_json(200, '', ret)
     else:
         return response_json(200, '', '')
@@ -202,17 +222,19 @@ def show_deploy_log():
         json_data = request.get_json()
         flow_id = json_data['flow_id']
         host = json_data['host']
+        port = json_data['port']
         try:
             r = create_redis_connection()
-            redis_resp = eval(r.hget(flow_id, host))
-            resp = ""
-            if redis_resp:
-                for step in redis_resp:
-                    step_key = step.keys()[0]
-                    step_value = step[step_key]
-                    resp = resp + "[" + step_key + "]" + "\n"+"\n"+step_value + "\n" + "\n" +"\n" +"\n" +"\n"
-            return response_json(200, '', resp)
-        except Exception, _:
+            redis_resp = str(r.hget('deploy_log_{0}'.format(flow_id), host + ':' + str(port)))
+            # resp = ""
+            # if redis_resp:
+            #     for step in redis_resp:
+            #         step_key = step.keys()[0]
+            #         step_value = step[step_key]
+            #         resp = resp + "[" + step_key + "]" + "\n"+"\n"+step_value + "\n" + "\n" +"\n" +"\n" +"\n"
+            return response_json(200, '', redis_resp)
+        except Exception, e:
+            print e
             return response_json(500, 'connect redis exception', '')
     else:
         return response_json(200, '', '')

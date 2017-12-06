@@ -148,7 +148,7 @@ def check_sql():
         advisor_user = current_app.config['SQLADVISOR_DB']['user']
         advisor_password = current_app.config['SQLADVISOR_DB']['password']
         advisor_database = "highso_db1"
-        command = """/bin/sqladvisor -h {0}  -P {1}  -u {2} -p '{3}' -d {4} -q "{5}" -v 1""".format(
+        command = """/tasks/sqladvisor -h {0}  -P {1}  -u {2} -p '{3}' -d {4} -q "{5}" -v 1""".format(
             advisor_host, advisor_port, advisor_user, advisor_password, advisor_database, sql)
         stdin, stdout, stderr = s.exec_command(command=command, get_pty=True)
         o = ""

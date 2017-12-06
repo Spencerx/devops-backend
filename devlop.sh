@@ -36,4 +36,4 @@ echo  "
 
 # start command
 
-gunicorn -b 0.0.0.0:8888 -w 8 -t 60 --access-logfile=- --access-logformat='"%(h)s" "%(t)s" "%(r)s" %(s)s %(b)s" "%(L)s"' devops:app
+gunicorn -b 0.0.0.0:8888 -w 8 -t 60 -k gevent --access-logfile=- --access-logformat='"%(h)s" "%(t)s" "%(r)s" %(s)s %(b)s" "%(L)s"' devops:app

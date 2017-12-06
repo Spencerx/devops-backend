@@ -20,5 +20,6 @@ def publish_hello():
     sse.publish({"message": "Hello!"}, type='greeting')
     return "Message sent!"
 
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=28888)

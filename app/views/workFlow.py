@@ -355,6 +355,17 @@ def realtime():
             for flow in flows:
                 workflow_list.append(flow.w)
 
+        if int(user_role) == 2:
+            flows = Workflow.select().where((Workflow.status == 1) & (Workflow.type == 1))
+            own_services = Services.select().where(Services.first_approve_user == int(uid))
+            own_services_list = []
+            for service in own_services:
+                own_services_list.append(int(service.s))
+            for flow in flows:
+                service_id = flow.service
+                if int(service_id) in own_services_list:
+                    workflow_list.append(flow.w)
+
         if int(user_role) == 3:
             flows = Workflow.select().where((Workflow.status == 3) & (Workflow.test_user == uid))
             for flow in flows:

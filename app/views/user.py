@@ -7,6 +7,7 @@ from app.tools.jsonUtils import response_json
 from app.tools.ormUtils import id_to_role
 from app.models.users import Users
 from app.models.workflows import Workflow
+from app.models.services import Services
 
 user = Blueprint('user', __name__)
 
@@ -32,6 +33,17 @@ def userinfo():
                     my_flow_count = 0
                     if int(user_role) == 1:
                         my_flow_count += Workflow.select().where(Workflow.status == 2).count()
+
+                    if int(user_role) == 2:
+                        flows = Workflow.select().where((Workflow.status == 1) & (Workflow.type == 1))
+                        own_services = Services.select().where(Services.first_approve_user == int(uid))
+                        own_services_list = []
+                        for service in own_services:
+                            own_services_list.append(int(service.s))
+                        for flow in flows:
+                            service_id = flow.service
+                            if int(service_id) in own_services_list:
+                                my_flow_count += 1
 
                     if int(user_role) == 3:
                         my_flow_count += Workflow.select().where((Workflow.status == 3) &
